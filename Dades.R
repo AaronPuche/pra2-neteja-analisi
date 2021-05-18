@@ -25,34 +25,13 @@ USA <- merge(USAv2, race, by.x=c("area_geografica", "City"), by.y=c("area_geogra
 
 USA$City <- gsub(" CDP| city| town|\\.| ","", USA$City)
 police$city <- gsub(" County| Parish|[^[:alnum:]]","",police$city)
-police$posicio <- NA
 
-for (i in 1:nrow(police)){
-  ciutat <- police$city[i]
-  if (length(grep(paste("^",ciutat,"$", sep=""), USA$City)) == 0){
-    police$posicio[i] <- NA
-  }else{
-    estat <- police$state[i]
-    possibles_ciutats <- grep(paste("^",ciutat,"$", sep=""), USA$City)
-    for (j in 1:length(possibles_ciutats)){
-      possible_ciutat <- possibles_ciutats[j]
-      if (estat == USA$area_geografica[possible_ciutat]){
-        police$posicio[i] <- possible_ciutat
-      }
-    }
-  }
-}
 
-USA1 <- USA[police$posicio,]
-crims <- cbind(police, USA1)
-df_clean <- na.omit(crims)
+df_clean <- merge(police, USA, by.x=c("state", "city"), by.y=c("area_geografica", "City"))
 
 df_clean$id <- NULL
 df_clean$city <- NULL
-df_clean$City <- NULL
 df_clean$state <- NULL
-df_clean$posicio <- NULL
-df_clean$area_geografica <- NULL
 
 df_clean %<>% mutate(date=as.Date(date, format = "%d/%m/%y"))
 
@@ -91,5 +70,4 @@ ggplot(df_clean) + geom_bar(map = aes(race))
 ggplot(df_clean) + geom_histogram(map = aes(age, fill = race), position = "fill")
 ggplot(df_clean) + geom_histogram(map = aes(age, fill = threat_level), position = "fill")
 ggplot(df_clean) + geom_histogram(map = aes(age, fill = manner_of_death), position = "fill")
-
 
