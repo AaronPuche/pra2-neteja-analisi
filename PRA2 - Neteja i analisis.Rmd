@@ -1,20 +1,27 @@
 ---
 title: "Pràctica 2 - Aarón Puche i Roger Pardell"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
     toc: yes
     toc_depth: 3
-  pdf_document: default
 ---
 
-# 1. Plantejament del problema
+# 1. Descripció del dataset. Perquè és important i quina pregunta/problema pretén respondre?
 
-"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+Aquest darrer any hem vist com han augmentat considerablement les manifestacions del moviment Black Lives Matter amb motiu de [l'assassina't del ciutadà George Floyd per mans de l'actualment expolicia Derek Chauvin](https://www.europapress.es/internacional/noticia-sentencia-contra-expolicia-asesino-george-floyd-leera-16-junio-20210424033426.html). Però no pareix ser un cas aïllat. Ja en 2014 hi va haver forts disturbis a la ciutat de Fergusson com a resposta per l'assassinat a mans d'una policia de Michael Brown, un jove Afroamericà de 18 anys.
 
-"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+Amb aquest context, el Washington Post va començar a recollir tots els tirotejos amb víctimes mortals causades per policies als Estats Units. A [kaggle](https://www.kaggle.com/kwullum/fatal-police-shootings-in-the-us?select=ShareRaceByCity.csv) hem trobat un conjunt de datasets amb aquestes dades que ens poden ajudar a analitzar aquesta situació. A més de les dades dels enfrontaments amb víctimes mortals, també disposem de diversos datasets amb informació relativa a les ciutats dels Estats Units. Aquesta informació ens serà molt útil per a analitzar més en profunditat si hi ha diferencies entre ciutats respecte a les ètnies predominants de cadascuna.
 
-# 2. Carrega inicial de les dades
+Algunes de les preguntes que volem respondre a partir de les dades són les següents:
+
+- Hi ha diferències d'ingressos mitjans d'una ciutat depenent de la distribució d'ètnies.
+- Hi ha ciutats on predominen persones d'unes ètnies sobre altres? Açò té alguna influència en les característiques de la ciutat?
+- Les víctimes mortals pertanyen majoritàriament a alguna ètnia? En concret, hi ha diferències significatives respecte al percentatge de víctimes de població afro americana respecte a les altres?
+- Predomina algun rang d'edat entre les persones que han sigut abatudes? Hi ha diferències entre ètnies?
+
+# 2. Integració i selecció de les dades d’interès a analitzar.
 
 Carreguem les llibreries que utilitzarem
 ```{r, eval=TRUE, echo=TRUE}
@@ -22,7 +29,6 @@ library(dplyr)
 library(ggplot2)
 library(magrittr)
 ```
-
 
 ```{r, eval=TRUE, echo=TRUE}
 df_householdIncome <- read.csv("data/MedianHouseholdIncome2015.csv", sep=",")
@@ -37,8 +43,6 @@ head(df_highSchool)
 head(df_policeKilling)
 head(df_shareRace)
 ```
-
-# 3. Descripció i neteja de les dades
 
 Canviem el nom de les columnes
 ```{r, eval=TRUE, echo=TRUE}
@@ -66,14 +70,16 @@ Merge del dataframe ambtingut amb df_policeKilling i neteja i preparació de les
 df_clean <- merge(df_policeKilling, USA, by.x=c("state", "city"), by.y=c("area_geografica", "City"))
 
 df_clean$id <- NULL
-#df_clean$city <- NULL
-#df_clean$state <- NULL
+df_clean$city <- NULL
+df_clean$state <- NULL
 
 # Convertim el camp date de tipus character a tipus date
 df_clean %<>% mutate(date=as.Date(date, format = "%d/%m/%y"))
 
-#rownames(df_clean) <- 1:nrow(df_clean)
+rownames(df_clean) <- 1:nrow(df_clean)
 ```
+
+# 3. Neteja de les dades.
 
 Tractar camp Median.Income:
 ```{r, eval=TRUE, echo=TRUE}
@@ -176,20 +182,23 @@ Tenim una situació semblant a la variable race. Com son sols 44 registres els e
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df_clean <- df_clean[df_clean$flee != "",]
 ```
+
 En aquest punt ja tenim les dades tractades. 
 Comprovem:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 colSums(df_clean == "")
 ```
-Cap valor buit.
+
+No tenim cap valor buit.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 str(df_clean)
 ```
+I finalment, comprovem que estan amb el tipus de dades adequat adequat.
 
-I amb el tipus adequat.
+# 4 i 5. Anàlisi de les dades i representació dels resultats a partir de taules i gràfiques.
 
-# 4. Anàlisis exploratori de les dades
+## Analisis exploratori de les dades
 
 En aquest punt ens centrarem en les variables gender, race, poverty, hig school i age.
 
@@ -271,4 +280,4 @@ ggplot(df_clean) + geom_histogram(map = aes(age, fill = manner_of_death), positi
 ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income))
 ```
 
-# 5. Contrast d'hipotesis
+# 6. Resolució del problema. A partir dels resultats obtinguts, quines són les conclusions? Els resultats permeten respondre al problema?
