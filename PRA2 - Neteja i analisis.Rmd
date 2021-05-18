@@ -1,4 +1,5 @@
 ---
+title: "Pràctica 2 - Aarón Puche i Roger Pardell"
 output:
   html_document:
     df_print: paged
@@ -6,6 +7,14 @@ output:
     toc_depth: 3
   pdf_document: default
 ---
+
+# 1. Plantejament del problema
+
+"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+
+"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+
+# 2. Carrega inicial de les dades
 
 Carreguem les llibreries que utilitzarem
 ```{r, eval=TRUE, echo=TRUE}
@@ -28,6 +37,9 @@ head(df_highSchool)
 head(df_policeKilling)
 head(df_shareRace)
 ```
+
+# 3. Descripció i neteja de les dades
+
 Canviem el nom de les columnes
 ```{r, eval=TRUE, echo=TRUE}
 colnames(df_householdIncome)[1] <- "area_geografica"
@@ -53,7 +65,7 @@ Merge del dataframe ambtingut amb df_policeKilling i neteja i preparació de les
 ```{r, eval=TRUE, echo=TRUE}
 df_clean <- merge(df_policeKilling, USA, by.x=c("state", "city"), by.y=c("area_geografica", "City"))
 
-#df_clean$id <- NULL
+df_clean$id <- NULL
 #df_clean$city <- NULL
 #df_clean$state <- NULL
 
@@ -99,33 +111,164 @@ df_clean$share_asian <- as.numeric(df_clean$share_asian)
 df_clean$share_black <- as.numeric(df_clean$share_black)
 df_clean$share_native_american <- as.numeric(df_clean$share_native_american)
 df_clean$share_hispanic <- as.numeric(df_clean$share_hispanic)
+
+head(df_clean)
 ```
 
-Gràfic boxplot Median.Income
+
+## Valors buits i extrems
+
+Una vegada tenim les dades en el format que volem, comprovem si hi ha algun valor buit entot el dataframe:
 ```{r, eval=TRUE, echo=TRUE}
-boxplot(df_clean$Median.Income)
+colSums(is.na(df_clean))
+```
+__age__
+
+Vegem que tenim 71 edats desconegudes.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+boxplot(df_clean$age)$out
+```
+Tenim uns quants valors extrems en la variable edat, que corresponen a edats majors de 70 anys. Com aquest valors podrien influir en la mitjana, anema a assignar als valors NA la mediana, que es mes robusta contra aquests efectes.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+df_clean$age[is.na(df_clean$age)] <- median(df_clean$age[!is.na(df_clean$age)])
+colSums(is.na(df_clean))
 ```
 
-Gràfics de densitat:
+Ya no tenim valors NA en cap variable. Comprovem si hi ha elements amb cadena buida.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+colSums(df_clean == "")
+```
+__date__
+
+Ens indica que hi ha valors NA en date, ho comprovem.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+which(is.na(df_clean$date))
+```
+
+En la comprovació ens diu que no hi ha camp valor de date amb NA.
+
+__armed__
+
+Com son sols 8 registres, els eliminarem
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+df_clean <- df_clean[df_clean$armed != "",]
+```
+
+__race__
+
+Aquestes dades serà una mica mes complicat, ja que no son valors numèrics, si no classes a les que pot pertanyer el registre.
+Vegem com es distribueixen.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+table(df_clean$race)
+```
+Qui mes tenim es de gent "White" pero no podem assignar els 167 registres a white ja que aço podria despres fer-nos caure en analisis erronis ja que estariem inflant aquestes dades.  Com no es una gran quantitat de registres respecte al total, els eliminarem.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+df_clean <- df_clean[df_clean$race != "",]
+```
+
+__flee__
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+table(df_clean$flee)
+```
+
+Tenim una situació semblant a la variable race. Com son sols 44 registres els eliminarem.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+df_clean <- df_clean[df_clean$flee != "",]
+```
+En aquest punt ja tenim les dades tractades. 
+Comprovem:
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+colSums(df_clean == "")
+```
+Cap valor buit.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+str(df_clean)
+```
+
+I amb el tipus adequat.
+
+# 4. Anàlisis exploratori de les dades
+
+En aquest punt ens centrarem en les variables gender, race, poverty, hig school i age.
+
+En primer lloc mirarem si la distribució de l'edat es igual a totes les races:
+
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_density(map = aes((x = Median.Income)))
-ggplot(df_clean) + geom_density(map = aes((x = age)))
-```
+#ggplot(df_clean) + geom_density(map = aes((x = age)))
 
-Gràfics de punts:
+ggplot(df_clean, aes(x = age, colour=race, group=race)) + geom_density()
+```
+Com es pot observat, les persones disparades de raça Black, Hispanic i Native-Americans tenen una distribucio bastant similars d'edats. Assian es una mica mes majors pero on es veu una diferencia mes gran es amb White, aquestes ultimes persones son mes majors, no s'agrupen tanten dades entonr als 20-30 anys com els altres.
+
+Vegem tambe la distribucio per sexes.
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income))
+ggplot(df_clean) + geom_bar(map = aes(gender, fill=gender))
 ```
 
-Gàfics de barres:
+Podem destacar que, clarament, la gran majoria de persones disparades son homes.
+
+
+Vegem ara com es distribueixen les races de les persones disparades:
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_bar(map = aes(gender))
-ggplot(df_clean) + geom_bar(map = aes(race))
+ggplot(df_clean) + geom_bar(map = aes(race, fill=race))
 ```
 
-Histogrames:
+De qui mes registres tenim es de raça "blanca". Es llogic veure aquests resultats ja que la majoria de persones en estats units son de raça blanca, però, quina es la proporcio de victimes de cada respectiva raça respecta al total de persones d'eixa raça?
+
+Per saber el total de la població de cada raça ens basarem en les dades de [Demographics of the United States](https://en.wikipedia.org/wiki/Demographics_of_the_United_States), de 2017. Les nostres dades, com podem veure, van de 2015 a 2017, aixi que s'ajustaran bastant be.
+
+<img src="data/tabla_poblacio.PNG" width="500">
+
+```{r, eval=TRUE, echo=TRUE}
+summary(df_clean$date)
+```
+
+La data minima deles dades es 02/01/2015 i la màxima, 31/07/2017
+
+Vegem el gràfic de les victimes de dispars tenint en compter la població total:
+```{r, eval=TRUE, echo=TRUE}
+races_total <- c((sum(df_clean$race == 'A') / 17186320), (sum(df_clean$race == 'B') / 40610815), (sum(df_clean$race == 'H') / 56510571), (sum(df_clean$race == 'N') / 2632102) , (sum(df_clean$race == 'O') / 15553808), (sum(df_clean$race == 'W') / 234370202))
+races <- c('A', 'B', 'H', 'N', 'O', 'W')
+
+barplot(races_total, names.arg = races)
+```
+
+Vegent el grafic amb les dades comparades amb el total de poblacio de cada raça pareix indicar que les persones de raça negra, natius americans i hispanos son mes probables de rebre un tir d'un policia que una persona blanca.
+
+Per analitzar un poc mes en profunditat algunes posibles relacions entre les persones que han sigut disparadaes, discritzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors en les franjes: 0-24, 25-49, 50-74 i 75-100.
+
+```{r, eval=TRUE, echo=TRUE}
+df_clean["range_highSchool"]<- cut(df_clean$percent_completed_hs, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
+df_clean["range_poverty"]<- cut(df_clean$poverty_rate, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
+```
+
+```{r, eval=TRUE, echo=TRUE}
+table(df_clean$range_highSchool)
+table(df_clean$range_poverty)
+```
+
+```{r, eval=TRUE, echo=TRUE}
+ggplot(df_clean) + geom_bar(map = aes(x = range_highSchool, fill=race), position = "fill")
+```
+Ens fixem amb els percentatges entre 50 i 100% perque en els anteriors hi han molt poques dades.
+Pareix que les victimes blanques solen viure en ciutats amb un nievell d'estudis superiors. Destaca sobretot la diferencia amb la gent hispana.
+
+
+```{r, eval=TRUE, echo=TRUE}
+ggplot(df_clean) + geom_bar(map = aes(x = range_poverty, fill=race), position = "fill")
+```
+
+Per ultim, mitjançant histogrames vegem com es distribueixen els tipus d'amenaça que s'indiquin i la manera en que ha mort la persona:
 ```{r, eval=TRUE, echo=TRUE}
 ggplot(df_clean) + geom_histogram(map = aes(age, fill = race), position = "fill")
 ggplot(df_clean) + geom_histogram(map = aes(age, fill = threat_level), position = "fill")
 ggplot(df_clean) + geom_histogram(map = aes(age, fill = manner_of_death), position = "fill")
 ```
+
+```{r, eval=TRUE, echo=TRUE}
+ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income))
+```
+
+# 5. Contrast d'hipotesis
