@@ -1,0 +1,131 @@
+---
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: 3
+  pdf_document: default
+---
+
+Carreguem les llibreries que utilitzarem
+```{r, eval=TRUE, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+```
+
+
+```{r, eval=TRUE, echo=TRUE}
+df_householdIncome <- read.csv("data/MedianHouseholdIncome2015.csv", sep=",")
+df_poverty <- read.csv("data/PercentagePeopleBelowPovertyLevel.csv", sep=",")
+df_highSchool <- read.csv("data/PercentOver25CompletedHighSchool.csv", sep=",")
+df_policeKilling <- read.csv("data/PoliceKillingsUS.csv", sep=",")
+df_shareRace <- read.csv("data/ShareRaceByCity.csv", sep=",")
+
+head(df_householdIncome)
+head(df_poverty)
+head(df_highSchool)
+head(df_policeKilling)
+head(df_shareRace)
+```
+Canviem el nom de les columnes
+```{r, eval=TRUE, echo=TRUE}
+colnames(df_householdIncome)[1] <- "area_geografica"
+colnames(df_poverty)[1] <- "area_geografica"
+colnames(df_highSchool)[1] <- "area_geografica"
+colnames(df_shareRace)[1] <- "area_geografica"
+```
+
+Merge els distins df:
+```{r, eval=TRUE, echo=TRUE}
+USAv1 <- merge(df_highSchool, df_poverty, by.x=c("area_geografica", "City"), by.y=c("area_geografica", "City"))
+USAv2 <- merge(USAv1, df_householdIncome, by.x=c("area_geografica", "City"), by.y=c("area_geografica", "City"))
+USA <- merge(USAv2, df_shareRace, by.x=c("area_geografica", "City"), by.y=c("area_geografica", "City"))
+```
+
+Normalitzem els noms de les ciutats:
+```{r, eval=TRUE, echo=TRUE}
+USA$City <- gsub(" CDP| city| town|\\.| ","", USA$City)
+df_policeKilling$city <- gsub(" County| Parish|[^[:alnum:]]","",df_policeKilling$city)
+```
+
+Merge del dataframe ambtingut amb df_policeKilling i neteja i preparació de les dades:
+```{r, eval=TRUE, echo=TRUE}
+df_clean <- merge(df_policeKilling, USA, by.x=c("state", "city"), by.y=c("area_geografica", "City"))
+
+#df_clean$id <- NULL
+#df_clean$city <- NULL
+#df_clean$state <- NULL
+
+# Convertim el camp date de tipus character a tipus date
+df_clean %<>% mutate(date=as.Date(date, format = "%d/%m/%y"))
+
+#rownames(df_clean) <- 1:nrow(df_clean)
+```
+
+Tractar camp Median.Income:
+```{r, eval=TRUE, echo=TRUE}
+
+table(df_clean$Median.Income)[1:5]
+
+# Hem vist que la variable Median.Income te el valor "-" i "(X)", els subtituim per 0
+df_clean[df_clean$Median.Income == "-",]$Median.Income <- "0"
+df_clean[df_clean$Median.Income == "(X)",]$Median.Income <- "0"
+
+# Convertim la variable a tipus numeric
+df_clean$Median.Income <- as.numeric(df_clean$Median.Income)
+
+# Calculem la mitjana i la asignem als valors que haviem subtituit abans
+mean_income <- mean(df_clean[df_clean$Median.Income > 0,]$Median.Income)
+df_clean$Median.Income[df_clean$Median.Income == 0] <- mean_income
+```
+
+Continuem amb el tractament de les dades:
+
+- Pasarem les variables: manner_of_death, armed, gender, race, threat_level i flee a tipus factor.
+- I les variables: percent_completed_hs, poverty_rate, share_white, share_asian, share_black, share_native_american i share_hispanic a tipus numeric.
+
+```{r, eval=TRUE, echo=TRUE}
+df_clean$manner_of_death <- as.factor(df_clean$manner_of_death)
+df_clean$armed <- as.factor(df_clean$armed)
+df_clean$gender <- as.factor(df_clean$gender)
+df_clean$race <- as.factor(df_clean$race)
+df_clean$threat_level <- as.factor(df_clean$threat_level)
+df_clean$flee <- as.factor(df_clean$flee)
+df_clean$percent_completed_hs <- as.numeric(df_clean$percent_completed_hs)
+df_clean$poverty_rate <- as.numeric(df_clean$poverty_rate)
+df_clean$share_white <- as.numeric(df_clean$share_white)
+df_clean$share_asian <- as.numeric(df_clean$share_asian)
+df_clean$share_black <- as.numeric(df_clean$share_black)
+df_clean$share_native_american <- as.numeric(df_clean$share_native_american)
+df_clean$share_hispanic <- as.numeric(df_clean$share_hispanic)
+```
+
+Gràfic boxplot Median.Income
+```{r, eval=TRUE, echo=TRUE}
+boxplot(df_clean$Median.Income)
+```
+
+Gràfics de densitat:
+```{r, eval=TRUE, echo=TRUE}
+ggplot(df_clean) + geom_density(map = aes((x = Median.Income)))
+ggplot(df_clean) + geom_density(map = aes((x = age)))
+```
+
+Gràfics de punts:
+```{r, eval=TRUE, echo=TRUE}
+ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income))
+```
+
+Gàfics de barres:
+```{r, eval=TRUE, echo=TRUE}
+ggplot(df_clean) + geom_bar(map = aes(gender))
+ggplot(df_clean) + geom_bar(map = aes(race))
+```
+
+Histogrames:
+```{r, eval=TRUE, echo=TRUE}
+ggplot(df_clean) + geom_histogram(map = aes(age, fill = race), position = "fill")
+ggplot(df_clean) + geom_histogram(map = aes(age, fill = threat_level), position = "fill")
+ggplot(df_clean) + geom_histogram(map = aes(age, fill = manner_of_death), position = "fill")
+```
