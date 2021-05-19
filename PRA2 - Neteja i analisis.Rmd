@@ -342,27 +342,61 @@ Contindrà les variables:
 
 ```{r, eval=TRUE, echo=TRUE}
 df_clean_cities <- unique(df_clean[,c(1,2,14,15,16,17,18,19,20,21)])
+head(df_clean_cities)
 ```
 
-A partir d'aquestes dades construirem tres models de regressió múltiple que ens podrien ajudar a predir informació sobre alguna ciutat a partir d'altres dades:
+En l'anàlisi preliminar de les dades hem vist certa deferència amb els ingressos de les ciutats, el percentatge d'estudis superats i el percentatge de pobresa amb les persones blanques negres i hispanes. Ens centrarem en aquestes dades per a fer les anàlisis de regressió.
 
-__Model 1:__ Predicció de l'ingrès mitja a partir de les variables share_white, share_black.
+En primer lloc, mirem com es relacionen aquestes variables.
+
+Els valors d'aquesta taula estaran entre -1 i 1.
+
+- 1 significara que hi ha una relació perfecta i positiva, és a dir, si augmenta un valor augmenta també l'altre.
+- -1 significara també que hi ha una relació perfecta, però inversa. Quan augmente un valor, disminuirà l'altre.
+- I 0 significarà que no hi ha relació.
+
+```{r, eval=TRUE, echo=TRUE}
+cor(df_clean_cities[,c(3,4,5,6,7,10)])
+```
+Veient els resultats podem destacar el següent:
+
+- __percent_completed_hs:__ es relacionara en mesura amb poverty_rate i share_hispanic. Els dos en forma inversa, a més percentatge de pobresa o de persones hispanes, menys percentatge d'estudis superats tindrà la ciutat..
+- __poverty_rate:__ Com pot semblar lògic, està fortament relacionada de forma inversa amb Median.Income. A major ingressos mitjans de les ciutats, menor percentatge de pobresa. També està relacionat de forma inversa amb percent_completed_hs. També pot ser lògic, a majors estudis superats, menor percentatge de pobresa.
+- __Median.Income:__ Vegem també la relació inversa amb poverty_rate que ja hem explicat i una mica de relació directa (0.45) amb percent_completed_hs.
+
+Ara calcularem tres models de regressió múltiple per a predir les variables Median.Income, poverty_rate i percent_completed_hs:
+
+__Model 1:__ Predicció de l'ingrés mitja a partir de les variables share_white, share_black, share_hispanic, percent_completed_hs i poverty_rate.
 ```{r, eval=TRUE, echo=TRUE}
 model_1 <- lm(formula = Median.Income ~ share_white + share_black + share_hispanic + percent_completed_hs + poverty_rate, data = df_clean_cities)
 summary(model_1)
 ```
 
-__Model 2:__ Predicció de la variable poverty_rate amb share_white, share_black i share_hispanic.
+Amb els p-valor podem comprovar que totes les variables són significants per a la construcció del model.
+
+Per comprovar la qualitat del model ens fixem en el valor obtingut de R-squared. Com més proper a 1 siga, millor s'ajustarà el model a les dades. Hem obtingut un `r round(summary(model_1)$r.squared,2)`. S'ajusta a les dades, però no amb una gran exactitud.
+
+__Model 2:__ Predicció de la variable poverty_rate amb share_white, share_black, share_hispanic, percent_completed_hs i Median.Income.
 ```{r, eval=TRUE, echo=TRUE}
-model_2 <- lm(formula = poverty_rate ~ share_white + share_black + share_hispanic, data = df_clean_cities)
+model_2 <- lm(formula = poverty_rate ~ share_white + share_black + share_hispanic + percent_completed_hs + Median.Income, data = df_clean_cities)
 summary(model_2)
 ```
 
-__Model 3:__ Predicció de el percentatge de persones que han superat els estudis superriors a partir de les variables share_white, share_black i share_hispanic.
+En aquest model podem observar que la variable share_black no és significativa per explicar el percentatge de pobresa, podríem llevar-la del model sense que tinga una gran influencia.
+
+Pel que fa a l'ajust del model a les dades, hem obtingut un $R^2$ molt similar a l'anterior. $R^2$ = `r round(summary(model_2)$r.squared,2)`
+
+__Model 3:__ Predicció del percentatge de persones que han superat els estudis superiors a partir de les variables share_white, share_black, share_hispanic, poverty_rate i Median.Income.
 ```{r, eval=TRUE, echo=TRUE}
-model_3 <- lm(formula = percent_completed_hs ~ share_white + share_black  + share_hispanic, data = df_clean_cities)
+model_3 <- lm(formula = percent_completed_hs ~ share_white + share_black  + share_hispanic + poverty_rate + Median.Income, data = df_clean_cities)
 summary(model_3)
 ```
+
+En aquest tenim dos variables que podríem llevar del model, ja que no són significants per a la seua construcció. Són les variables de share_white i share_black. El seu p-valor és superior a 0.05, per la qual cosa no tenen una gran influencia en explicar el percentatge d'estudis superats.
+
+Quant al valor de $R^2$ és molt similar als altres dos models. $R^2$ = `r round(summary(model_2)$r.squared,2)`
+
+Per finalitzar aquest punt, dir que no hem obtingut models que s'ajusten a la perfecció a les dades, però que sí que poden predir en certa eficàcia tant el percentatge de pobresa, el percentatge d'estudis superats o l'ingrés mitja de la ciutat.
 
 ## Clustering
 

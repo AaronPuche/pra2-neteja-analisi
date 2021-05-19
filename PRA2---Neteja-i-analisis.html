@@ -552,9 +552,44 @@ grid.arrange(plot_share_white, plot_share_black, plot_share_native_american, plo
 <li>share_asian</li>
 <li>share_hispanic</li>
 </ul>
-<pre class="r"><code>df_clean_cities &lt;- unique(df_clean[,c(1,2,14,15,16,17,18,19,20,21)])</code></pre>
-<p>A partir d’aquestes dades construirem tres models de regressió múltiple que ens podrien ajudar a predir informació sobre alguna ciutat a partir d’altres dades:</p>
-<p><strong>Model 1:</strong> Predicció de l’ingrès mitja a partir de les variables share_white, share_black.</p>
+<pre class="r"><code>df_clean_cities &lt;- unique(df_clean[,c(1,2,14,15,16,17,18,19,20,21)])
+head(df_clean_cities)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["state"],"name":[1],"type":["chr"],"align":["left"]},{"label":["city"],"name":[2],"type":["chr"],"align":["left"]},{"label":["percent_completed_hs"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["poverty_rate"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["Median.Income"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["share_white"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["share_black"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["share_native_american"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["share_asian"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["share_hispanic"],"name":[10],"type":["dbl"],"align":["right"]}],"data":[{"1":"AK","2":"Barrow","3":"84.6","4":"11.7","5":"76902","6":"16.9","7":"1.0","8":"61.2","9":"9.1","10":"3.1","_rn_":"1"},{"1":"AK","2":"BigLake","3":"90.4","4":"9.6","5":"70988","6":"86.1","7":"0.2","8":"7.0","9":"0.5","10":"3.1","_rn_":"2"},{"1":"AK","2":"Fairbanks","3":"91.2","4":"13.1","5":"55229","6":"66.1","7":"9.0","8":"10.0","9":"3.6","10":"9.0","_rn_":"3"},{"1":"AK","2":"Houston","3":"90.2","4":"14.8","5":"50438","6":"82.2","7":"0.4","8":"6.7","9":"0.6","10":"3.3","_rn_":"8"},{"1":"AK","2":"Wasilla","3":"91.8","4":"11.7","5":"61541","6":"83.4","7":"1.4","8":"5.2","9":"2.1","10":"4.3","_rn_":"9"},{"1":"AL","2":"Abbeville","3":"69.1","4":"29.1","5":"25615","6":"54.4","7":"41.4","8":"0.1","9":"1.0","10":"3.1","_rn_":"11"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>En l’anàlisi preliminar de les dades hem vist certa deferència amb els ingressos de les ciutats, el percentatge d’estudis superats i el percentatge de pobresa amb les persones blanques negres i hispanes. Ens centrarem en aquestes dades per a fer les anàlisis de regressió.</p>
+<p>En primer lloc, mirem com es relacionen aquestes variables.</p>
+<p>Els valors d’aquesta taula estaran entre -1 i 1.</p>
+<ul>
+<li>1 significara que hi ha una relació perfecta i positiva, és a dir, si augmenta un valor augmenta també l’altre.</li>
+<li>-1 significara també que hi ha una relació perfecta, però inversa. Quan augmente un valor, disminuirà l’altre.</li>
+<li>I 0 significarà que no hi ha relació.</li>
+</ul>
+<pre class="r"><code>cor(df_clean_cities[,c(3,4,5,6,7,10)])</code></pre>
+<pre><code>##                      percent_completed_hs poverty_rate Median.Income
+## percent_completed_hs            1.0000000   -0.5651343    0.45828816
+## poverty_rate                   -0.5651343    1.0000000   -0.74819354
+## Median.Income                   0.4582882   -0.7481935    1.00000000
+## share_white                     0.3296627   -0.3155457    0.06805509
+## share_black                    -0.1123993    0.3375309   -0.24012782
+## share_hispanic                 -0.6047447    0.1212579    0.02898934
+##                      share_white share_black share_hispanic
+## percent_completed_hs  0.32966273  -0.1123993    -0.60474465
+## poverty_rate         -0.31554573   0.3375309     0.12125786
+## Median.Income         0.06805509  -0.2401278     0.02898934
+## share_white           1.00000000  -0.7154727    -0.27642734
+## share_black          -0.71547273   1.0000000    -0.17914287
+## share_hispanic       -0.27642734  -0.1791429     1.00000000</code></pre>
+<p>Veient els resultats podem destacar el següent:</p>
+<ul>
+<li><strong>percent_completed_hs:</strong> es relacionara en mesura amb poverty_rate i share_hispanic. Els dos en forma inversa, a més percentatge de pobresa o de persones hispanes, menys percentatge d’estudis superats tindrà la ciutat..</li>
+<li><strong>poverty_rate:</strong> Com pot semblar lògic, està fortament relacionada de forma inversa amb Median.Income. A major ingressos mitjans de les ciutats, menor percentatge de pobresa. També està relacionat de forma inversa amb percent_completed_hs. També pot ser lògic, a majors estudis superats, menor percentatge de pobresa.</li>
+<li><strong>Median.Income:</strong> Vegem també la relació inversa amb poverty_rate que ja hem explicat i una mica de relació directa (0.45) amb percent_completed_hs.</li>
+</ul>
+<p>Ara calcularem tres models de regressió múltiple per a predir les variables Median.Income, poverty_rate i percent_completed_hs:</p>
+<p><strong>Model 1:</strong> Predicció de l’ingrés mitja a partir de les variables share_white, share_black, share_hispanic, percent_completed_hs i poverty_rate.</p>
 <pre class="r"><code>model_1 &lt;- lm(formula = Median.Income ~ share_white + share_black + share_hispanic + percent_completed_hs + poverty_rate, data = df_clean_cities)
 summary(model_1)</code></pre>
 <pre><code>## 
@@ -580,54 +615,65 @@ summary(model_1)</code></pre>
 ## Residual standard error: 10700 on 1128 degrees of freedom
 ## Multiple R-squared:  0.6381, Adjusted R-squared:  0.6365 
 ## F-statistic: 397.8 on 5 and 1128 DF,  p-value: &lt; 2.2e-16</code></pre>
-<p><strong>Model 2:</strong> Predicció de la variable poverty_rate amb share_white, share_black i share_hispanic.</p>
-<pre class="r"><code>model_2 &lt;- lm(formula = poverty_rate ~ share_white + share_black + share_hispanic, data = df_clean_cities)
+<p>Amb els p-valor podem comprovar que totes les variables són significants per a la construcció del model.</p>
+<p>Per comprovar la qualitat del model ens fixem en el valor obtingut de R-squared. Com més proper a 1 siga, millor s’ajustarà el model a les dades. Hem obtingut un 0.64. S’ajusta a les dades, però no amb una gran exactitud.</p>
+<p><strong>Model 2:</strong> Predicció de la variable poverty_rate amb share_white, share_black, share_hispanic, percent_completed_hs i Median.Income.</p>
+<pre class="r"><code>model_2 &lt;- lm(formula = poverty_rate ~ share_white + share_black + share_hispanic + percent_completed_hs + Median.Income, data = df_clean_cities)
 summary(model_2)</code></pre>
 <pre><code>## 
 ## Call:
-## lm(formula = poverty_rate ~ share_white + share_black + share_hispanic, 
-##     data = df_clean_cities)
+## lm(formula = poverty_rate ~ share_white + share_black + share_hispanic + 
+##     percent_completed_hs + Median.Income, data = df_clean_cities)
 ## 
 ## Residuals:
 ##     Min      1Q  Median      3Q     Max 
-## -23.482  -5.581  -0.973   4.866  55.513 
+## -18.675  -3.098  -0.569   2.560  40.019 
 ## 
 ## Coefficients:
-##                 Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)    14.650552   1.973459   7.424 2.23e-13 ***
-## share_white     0.002626   0.021304   0.123    0.902    
-## share_black     0.191992   0.024256   7.915 5.86e-15 ***
-## share_hispanic  0.085849   0.015579   5.511 4.42e-08 ***
+##                        Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)           6.303e+01  2.438e+00  25.854  &lt; 2e-16 ***
+## share_white          -9.387e-02  1.378e-02  -6.814 1.55e-11 ***
+## share_black          -3.502e-03  1.601e-02  -0.219  0.82693    
+## share_hispanic       -3.652e-02  1.233e-02  -2.962  0.00312 ** 
+## percent_completed_hs -2.553e-01  2.681e-02  -9.523  &lt; 2e-16 ***
+## Median.Income        -3.134e-04  1.139e-05 -27.516  &lt; 2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 8.399 on 1130 degrees of freedom
-## Multiple R-squared:  0.1481, Adjusted R-squared:  0.1458 
-## F-statistic: 65.46 on 3 and 1130 DF,  p-value: &lt; 2.2e-16</code></pre>
-<p><strong>Model 3:</strong> Predicció de el percentatge de persones que han superat els estudis superriors a partir de les variables share_white, share_black i share_hispanic.</p>
-<pre class="r"><code>model_3 &lt;- lm(formula = percent_completed_hs ~ share_white + share_black  + share_hispanic, data = df_clean_cities)
+## Residual standard error: 5.291 on 1128 degrees of freedom
+## Multiple R-squared:  0.6624, Adjusted R-squared:  0.6609 
+## F-statistic: 442.7 on 5 and 1128 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>En aquest model podem observar que la variable share_black no és significativa per explicar el percentatge de pobresa, podríem llevar-la del model sense que tinga una gran influencia.</p>
+<p>Pel que fa a l’ajust del model a les dades, hem obtingut un <span class="math inline">\(R^2\)</span> molt similar a l’anterior. <span class="math inline">\(R^2\)</span> = 0.66</p>
+<p><strong>Model 3:</strong> Predicció del percentatge de persones que han superat els estudis superiors a partir de les variables share_white, share_black, share_hispanic, poverty_rate i Median.Income.</p>
+<pre class="r"><code>model_3 &lt;- lm(formula = percent_completed_hs ~ share_white + share_black  + share_hispanic + poverty_rate + Median.Income, data = df_clean_cities)
 summary(model_3)</code></pre>
 <pre><code>## 
 ## Call:
 ## lm(formula = percent_completed_hs ~ share_white + share_black + 
-##     share_hispanic, data = df_clean_cities)
+##     share_hispanic + poverty_rate + Median.Income, data = df_clean_cities)
 ## 
 ## Residuals:
 ##     Min      1Q  Median      3Q     Max 
-## -53.511  -3.611   1.210   4.817  19.616 
+## -54.083  -2.422   0.646   3.072  20.908 
 ## 
 ## Coefficients:
-##                Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)    92.57911    1.68722  54.871  &lt; 2e-16 ***
-## share_white    -0.01698    0.01821  -0.932    0.351    
-## share_black    -0.13597    0.02074  -6.557 8.35e-11 ***
-## share_hispanic -0.30826    0.01332 -23.144  &lt; 2e-16 ***
+##                  Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)     8.619e+01  2.055e+00  41.937   &lt;2e-16 ***
+## share_white     2.348e-02  1.501e-02   1.565    0.118    
+## share_black    -1.075e-02  1.711e-02  -0.629    0.530    
+## share_hispanic -2.644e-01  1.063e-02 -24.878   &lt;2e-16 ***
+## poverty_rate   -2.915e-01  3.061e-02  -9.523   &lt;2e-16 ***
+## Median.Income   1.350e-04  1.521e-05   8.874   &lt;2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 7.181 on 1130 degrees of freedom
-## Multiple R-squared:  0.4165, Adjusted R-squared:  0.415 
-## F-statistic: 268.9 on 3 and 1130 DF,  p-value: &lt; 2.2e-16</code></pre>
+## Residual standard error: 5.654 on 1128 degrees of freedom
+## Multiple R-squared:  0.6388, Adjusted R-squared:  0.6372 
+## F-statistic: 399.1 on 5 and 1128 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>En aquest tenim dos variables que podríem llevar del model, ja que no són significants per a la seua construcció. Són les variables de share_white i share_black. El seu p-valor és superior a 0.05, per la qual cosa no tenen una gran influencia en explicar el percentatge d’estudis superats.</p>
+<p>Quant al valor de <span class="math inline">\(R^2\)</span> és molt similar als altres dos models. <span class="math inline">\(R^2\)</span> = 0.66</p>
+<p>Per finalitzar aquest punt, dir que no hem obtingut models que s’ajusten a la perfecció a les dades, però que sí que poden predir en certa eficàcia tant el percentatge de pobresa, el percentatge d’estudis superats o l’ingrés mitja de la ciutat.</p>
 </div>
 <div id="clustering" class="section level2">
 <h2>Clustering</h2>
