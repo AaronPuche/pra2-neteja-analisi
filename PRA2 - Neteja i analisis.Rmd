@@ -18,17 +18,16 @@ Algunes de les preguntes que volem respondre a partir de les dades són les seg�
 
 - Hi ha diferències d'ingressos mitjans d'una ciutat depenent de la distribució d'ètnies.
 - Hi ha ciutats on predominen persones d'unes ètnies sobre altres? Açò té alguna influència en les característiques de la ciutat?
-- Les víctimes mortals pertanyen majoritàriament a alguna ètnia? En concret, hi ha diferències significatives respecte al percentatge de víctimes de població afro americana respecte a les altres?
+- Les víctimes mortals pertanyen majoritàriament a alguna ètnia?
 - Predomina algun rang d'edat entre les persones que han sigut abatudes? Hi ha diferències entre ètnies?
 
-Així, els datasets d'interès són els següents:
+Així, els datasets d'interés són els següents:
 ```{r, eval=TRUE, echo=TRUE}
-df_householdIncome <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/MedianHouseholdIncome2015.csv")
-df_poverty <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentagePeopleBelowPovertyLevel.csv")
-df_highSchool <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentOver25CompletedHighSchool.csv")
-df_policeKilling <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PoliceKillingsUS.csv")
-df_shareRace <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/ShareRaceByCity.csv")
-
+df_householdIncome <- read.csv("data/MedianHouseholdIncome2015.csv")
+df_poverty <- read.csv("data/PercentagePeopleBelowPovertyLevel.csv")
+df_highSchool <- read.csv("data/PercentOver25CompletedHighSchool.csv")
+df_policeKilling <- read.csv("data/PoliceKillingsUS.csv")
+df_shareRace <- read.csv("data/ShareRaceByCity.csv")
 
 head(df_policeKilling)
 dim(df_policeKilling)
@@ -42,23 +41,26 @@ head(df_shareRace)
 dim(df_shareRace)
 ```
 
-El primer mostra els totes les víctimes mortals en mans de la policia. En total, tenim 2535 observacions i 14 atributs, entre els quals hi trobem l'edat, l'estat i la ciutat on ha succeït i la manera en que han mort.
+El primer mostra totes les víctimes mortals en mans de la policia. En total, tenim 2535 observacions i 14 atributs, entre els quals hi trobem l'edat, l'estat i la ciutat on ha succeït i la manera en què han mort.
 
-Els altres quatre conjunts són formats per unes 29300 observacions (entre 9268 i 29329), i un total de 10 atributs diferents. Cada observació és una ciutat americana, i els atributs són valors demogràfics i econòmics d'aquestes ciutats, per exemple, el percentatge de persones segons raça, la mediana dels ingressos familiars, etc.
+Els altres quatre conjunts són formats per unes 29300 observacions (entre 29268 i 29329), i un total de 10 atributs diferents. Cada observació és una ciutat americana, i els atributs són valors demogràfics i econòmics d'aquestes ciutats, per exemple, el percentatge de persones segons raça, la mediana dels ingressos familiars, etc.
 
 Aquests cinc conjunts aporten les característiques individuals de les víctimes, així com les variables ambientals de les ciutats on han succeït els assassinats. Així, se'ns permet fer una anàlisi més holística de la situació.
 
 
 # 2. Integració i selecció de les dades d’interès a analitzar.
 
-Carreguem les llibreries que utilitzarem
+Per a fer les nostres anàlisis crearem un dataset un amb totes les dades referents a informació sobre les ciutats relacionades amb la informació de les persones assassinades.
+
+En primer lloc carreguem les llibreries que utilitzarem al llarg de la pràctica:
 ```{r, eval=TRUE, echo=TRUE}
 library(dplyr)
 library(ggplot2)
+library(gridExtra)
 library(magrittr)
 ```
 
-Canviem el nom de les columnes
+Canviem el nom de la columna Geographic.area per a després fer la mescla de les dades:
 ```{r, eval=TRUE, echo=TRUE}
 colnames(df_householdIncome)[1] <- "area_geografica"
 colnames(df_poverty)[1] <- "area_geografica"
@@ -66,31 +68,33 @@ colnames(df_highSchool)[1] <- "area_geografica"
 colnames(df_shareRace)[1] <- "area_geografica"
 ```
 
-Merge els distins df:
+Mesclem els distints datasets i obtenim el dataset USA que contindrà tota la informació respectiva a les ciutats:
 ```{r, eval=TRUE, echo=TRUE}
 USAv1 <- merge(df_highSchool, df_poverty, by.x=c("area_geografica", "City"), by.y=c("area_geografica", "City"))
 USAv2 <- merge(USAv1, df_householdIncome, by.x=c("area_geografica", "City"), by.y=c("area_geografica", "City"))
 USA <- merge(USAv2, df_shareRace, by.x=c("area_geografica", "City"), by.y=c("area_geografica", "City"))
 ```
 
-Normalitzem els noms de les ciutats:
+Normalitzem els noms de les ciutats per fer la mescla de la informació de les ciutats i les persones assassinades:
 ```{r, eval=TRUE, echo=TRUE}
 USA$City <- gsub(" CDP| city| town|\\.| ","", USA$City)
 df_policeKilling$city <- gsub(" County| Parish|[^[:alnum:]]","",df_policeKilling$city)
 ```
 
-Merge del dataframe ambtingut amb df_policeKilling i neteja i preparació de les dades:
+Mesclem del dataset obtingut amb df_policeKilling:
 ```{r, eval=TRUE, echo=TRUE}
 df_clean <- merge(df_policeKilling, USA, by.x=c("state", "city"), by.y=c("area_geografica", "City"))
+
+# Eliminem aquesta, ja que en aquest cas no ens aporta informacio rellevant
 df_clean$id <- NULL
+
 # Convertim el camp date de tipus character a tipus date
 df_clean %<>% mutate(date=as.Date(date, format = "%d/%m/%y"))
+
 rownames(df_clean) <- 1:nrow(df_clean)
 ```
 
 # 3. Neteja de les dades.
-
-Primer, netejarem el conjunt de dades amb les víctimes. 
 
 Tractar camp Median.Income:
 ```{r, eval=TRUE, echo=TRUE}
@@ -140,6 +144,7 @@ Vegem que tenim 71 edats desconegudes.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 boxplot(df_clean$age)$out
 ```
+
 Tenim uns quants valors extrems en la variable edat, que corresponen a edats majors de 70 anys. Com aquest valors podrien influir en la mitjana, anema a assignar als valors NA la mediana, que es mes robusta contra aquests efectes.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df_clean$age[is.na(df_clean$age)] <- median(df_clean$age[!is.na(df_clean$age)])
@@ -200,38 +205,43 @@ No tenim cap valor buit.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 str(df_clean)
 ```
-I finalment, comprovem que estan amb el tipus de dades adequat adequat.
-
+I finalment, comprovem que estan amb el tipus de dades adequat.
 
 # 4 i 5. Anàlisi de les dades i representació dels resultats a partir de taules i gràfiques.
 
+En aquest punt hem decidit ajuntar els punts 4 i 5 de l'enunciat per a fer en primer lloc una anàlisi mitjançant taules i gràfiques de les relacions que podem observar d'algunes variables que ens interessin i després passar a fer anàlisis amb més profunditat de les dades.
+
 ## Analisis exploratori de les dades
 
-En aquest punt ens centrarem en les variables gender, race, poverty, hig school i age.
+Ens centrarem en les relacions de les següents característiques: edat, gènere, ètnia, nivell de pobresa, nivell d'estudis, ingressos mitjans, el tipus d'amenaça i la forma de morir.
 
-En primer lloc mirarem si la distribució de l'edat es igual a totes les races:
+__Distribució per edats__
 
+En primer lloc mirarem si la distribució de l'edat és igual a totes les races:
 ```{r, eval=TRUE, echo=TRUE}
 ggplot(df_clean, aes(x = age, colour=race, group=race)) + geom_density()
 ```
-Com es pot observat, les persones disparades de raça Black, Hispanic i Native-Americans tenen una distribucio bastant similars d'edats. Assian es una mica mes majors pero on es veu una diferencia mes gran es amb White, aquestes ultimes persones son mes majors, no s'agrupen tanten dades entonr als 20-30 anys com els altres.
+Com es pot observar, les persones assassinades d'ètnia negra, hispana o nativa americana tenen una distribució de les edats bastant similar. Les edats de les persones asiàtiques són una mica més majors, però on es veu una diferència més gran és amb les persones blanques. Aquestes persones són més majors, no s'agrupen tant entorn als 20-30 anys com les altres.
 
-Vegem tambe la distribucio per sexes.
+__Distribució per gèneres__
+
+Vegem també la distribució per sexes:
 ```{r, eval=TRUE, echo=TRUE}
 ggplot(df_clean) + geom_bar(map = aes(gender, fill=gender))
 ```
 
-Podem destacar que, clarament, la gran majoria de persones disparades son homes.
+Podem destacar que, clarament, la gran majoria de persones disparades són homes.
 
+__Distribució d'ètnies__
 
 Vegem ara com es distribueixen les races de les persones disparades:
 ```{r, eval=TRUE, echo=TRUE}
 ggplot(df_clean) + geom_bar(map = aes(race, fill=race))
 ```
 
-De qui mes registres tenim es de raça "blanca". Es llogic veure aquests resultats ja que la majoria de persones en estats units son de raça blanca, però, quina es la proporcio de victimes de cada respectiva raça respecta al total de persones d'eixa raça?
+De qui més registres tenim és de les persones blanques. És lògic veure aquests resultats, ja que la majoria de persones en Estats Units són de blanques, però, quina és la proporció de víctimes de cada respectiva ètnia respecte al total de persones d'eixa ètnia?
 
-Per saber el total de la població de cada raça ens basarem en les dades de [Demographics of the United States](https://en.wikipedia.org/wiki/Demographics_of_the_United_States), de 2017. Les nostres dades, com podem veure, van de 2015 a 2017, aixi que s'ajustaran bastant be.
+així que s'ajustaran bastant bé.
 
 <img src="data/tabla_poblacio.PNG" width="500">
 
@@ -239,80 +249,149 @@ Per saber el total de la població de cada raça ens basarem en les dades de [De
 summary(df_clean$date)
 ```
 
-La data minima deles dades es 02/01/2015 i la màxima, 31/07/2017
+La data mínima de les nostres dades és 02/01/2015 i la màxima, 31/07/2017.
 
-Vegem el gràfic de les victimes de dispars tenint en compter la població total:
+Vegem el gràfic de les víctimes de tirs tenint en compte la població total de cada ètnia:
 ```{r, eval=TRUE, echo=TRUE}
 races_total <- c((sum(df_clean$race == 'A') / 17186320), (sum(df_clean$race == 'B') / 40610815), (sum(df_clean$race == 'H') / 56510571), (sum(df_clean$race == 'N') / 2632102) , (sum(df_clean$race == 'O') / 15553808), (sum(df_clean$race == 'W') / 234370202))
+
+# Etiquetes
 races <- c('A', 'B', 'H', 'N', 'O', 'W')
+
 barplot(races_total, names.arg = races)
 ```
 
-Vegent el grafic amb les dades comparades amb el total de poblacio de cada raça pareix indicar que les persones de raça negra, natius americans i hispanos son mes probables de rebre un tir d'un policia que una persona blanca.
+Veient el gràfic amb les dades comparades amb el total de població de cada ètnia pareix indicar que les persones negres, natives americanes i hispanes són més probables de rebre un tir d'un policia que una persona blanca.
 
-Per analitzar un poc mes en profunditat algunes posibles relacions entre les persones que han sigut disparadaes, discritzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors en les franjes: 0-24, 25-49, 50-74 i 75-100.
+__Poverty i high school per ètnies__
 
+Per analitzar un poc mes en profunditat algunes possibles relacions entre les persones que han sigut disparades, discretitzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors en les franges: 0-24, 25-49, 50-74 i 75-100.
 ```{r, eval=TRUE, echo=TRUE}
 df_clean["range_highSchool"]<- cut(df_clean$percent_completed_hs, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
 df_clean["range_poverty"]<- cut(df_clean$poverty_rate, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
 ```
 
+Vegem la distribució de les dades en aquestes franges:
 ```{r, eval=TRUE, echo=TRUE}
 table(df_clean$range_highSchool)
 table(df_clean$range_poverty)
 ```
 
+Analitzem-ho gràficament:
 ```{r, eval=TRUE, echo=TRUE}
 ggplot(df_clean) + geom_bar(map = aes(x = range_highSchool, fill=race), position = "fill")
 ```
-Ens fixem amb els percentatges entre 50 i 100% perque en els anteriors hi han molt poques dades.
-Pareix que les victimes blanques solen viure en ciutats amb un nievell d'estudis superiors. Destaca sobretot la diferencia amb la gent hispana.
 
+Ens fixem en els percentatges entre 50 i 100% perquè en els anteriors hi han molt poques dades.
+Pareix que les víctimes blanques solen viure en ciutats amb un nivell d'estudis superiors. Destaca sobretot la diferència amb la gent hispana.
 
 ```{r, eval=TRUE, echo=TRUE}
 ggplot(df_clean) + geom_bar(map = aes(x = range_poverty, fill=race), position = "fill")
 ```
 
-Per ultim, mitjançant histogrames vegem com es distribueixen els tipus d'amenaça que s'indiquin i la manera en que ha mort la persona:
+En aquest gràfic ens ficarem en les franges de 0 a 50%. Les altres franges no tenen suficients dades per a ser significants.
+Pareix que hi ha una diferència notable entre les persones blanques i negres. El percentatge de les persones blanques amb rang de pobresa entre el 0 i 25% és superior al de les persones blanques en el rang 25-50%. Amb les persones negres ocorre el contrari, hi ha un percentatge major de persones en rang de pobresa entre el 25-50% que entre el 0 i 25%.
+
+__Median Income per ètnies__
+
+En aquest apartat compararem la distribució de l'ingrés mitja de les ciutats tenint en compte la representació de cada ètnia.
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_histogram(map = aes(age, fill = race), position = "fill")
+plot_share_white <- ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income))
+plot_share_black <- ggplot(df_clean) + geom_point(map = aes(x = share_black, y = Median.Income))
+plot_share_native_american <- ggplot(df_clean) + geom_point(map = aes(x = share_native_american, y = Median.Income))
+plot_share_asian <- ggplot(df_clean) + geom_point(map = aes(x = share_asian, y = Median.Income))
+plot_share_hispanic <-ggplot(df_clean) + geom_point(map = aes(x = share_hispanic, y = Median.Income))
+
+grid.arrange(plot_share_white, plot_share_black, plot_share_native_american, plot_share_asian, plot_share_hispanic, ncol=2)
+```
+
+Com és lògic les ciutats amb un alt percentatge de persones blanques són les que més tenim.
+
+Pel que fa a la comparació en els ingressos en ciutats amb un percentatge molt elevat de cada ètnia podem veure certes diferències. Les ciutats amb alt percentatge de persones blanques són les que més alts ingressos presenten, encara que també hi ha ciutats amb alt percentatge de persones negres o asiàtiques amb mitjans-alts ingressos. En canvi, en ciutats amb alt percentatge de persones hispanes o natives americanes no hi tenen uns grans ingressos.
+
+En els següents apartats ens centrarem en les persones blanques, negres i hispanes per a analitzar-les més, ja que són les que més dades tenim.
+
+__Amenaça i manera en què ha mort la persona__
+
+Per últim, mitjançant histogrames vegem com es distribueixen els percentatges dels tipus d'amenaça que s'indiquen i la manera en què ha mort la persona relacionant-ho amb l'edat:
+```{r, eval=TRUE, echo=TRUE}
 ggplot(df_clean) + geom_histogram(map = aes(age, fill = threat_level), position = "fill")
 ggplot(df_clean) + geom_histogram(map = aes(age, fill = manner_of_death), position = "fill")
 ```
 
+No pareix haver-hi una diferència notable entre el tipus d'amenaça i l'edat. La majoria es consideren atacs en la mateixa proporció.
+
+I tampoc pareix que canvia la proporció de persones mortes per un tir o un tir i Taser amb l'edat. Tenim un pic al voltant dels 80 anys, però és possible que siga degut al fet que en eixes edats tinguem molt poques dades.
+
+## Regressió
+
+A partir de les dades ja tractades obtenim un dataset amb la informació respectiva a les ciutats.
+
+Contindrà les variables:
+
+- state
+- city
+- percent_completed_hs
+- poverty_rate
+- Median.Income
+- share_white
+- share_black
+- share_native_american
+- share_asian
+- share_hispanic
+
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income))
+df_clean_cities <- unique(df_clean[,c(1,2,14,15,16,17,18,19,20,21)])
 ```
 
-# Regressió
-```{r}
-df_clean_1 <- unique(df_clean[,c(1,2,14,15,16,17,18,19,20,21)])
-```
+A partir d'aquestes dades construirem tres models de regressió múltiple que ens podrien ajudar a predir informació sobre alguna ciutat a partir d'altres dades:
 
-
-```{r}
-model_1 <- lm(formula = Median.Income ~ share_white + percent_completed_hs + poverty_rate, data = df_clean_1)
+__Model 1:__ Predicció de l'ingrès mitja a partir de les variables share_white, share_black.
+```{r, eval=TRUE, echo=TRUE}
+model_1 <- lm(formula = Median.Income ~ share_white + share_black + share_hispanic + percent_completed_hs + poverty_rate, data = df_clean_cities)
 summary(model_1)
 ```
 
-```{r}
-model_2 <- lm(formula = poverty_rate ~ share_white + share_black, data = df_clean_1)
+__Model 2:__ Predicció de la variable poverty_rate amb share_white, share_black i share_hispanic.
+```{r, eval=TRUE, echo=TRUE}
+model_2 <- lm(formula = poverty_rate ~ share_white + share_black + share_hispanic, data = df_clean_cities)
 summary(model_2)
-model_3 <- lm(formula = percent_completed_hs ~ share_white + share_black, data = df_clean_1)
+```
+
+__Model 3:__ Predicció de el percentatge de persones que han superat els estudis superriors a partir de les variables share_white, share_black i share_hispanic.
+```{r, eval=TRUE, echo=TRUE}
+model_3 <- lm(formula = percent_completed_hs ~ share_white + share_black  + share_hispanic, data = df_clean_cities)
 summary(model_3)
 ```
 
-## Clusters
-```{r}
+## Clustering
+
+En aquest punt anem a agrupar el dataset de df_clean_cities en clusters per veure si les ciutats es podrien agrupar segons algunes característiques.
+
+Aplicarem l'algoritme kmeans. Per saber quin k serà el mes òptim farem servir el mètode del colze amb l'ajuda de la següent funció:
+```{r, eval=TRUE, echo=TRUE}
 library(cluster)
 library(fpc)
 library(factoextra)
 
-fviz_nbclust(df_clean_1[3:10], kmeans, method = "wss") +
+fviz_nbclust(df_clean_cities[3:10], kmeans, method = "wss") +
    labs(subtitle = "Mètode Elbow") +
    xlab("Número de clústers") + 
    ylab("Suma total de quadrats dins dels grups")
 ```
 
+## Contrast d'hipòtesis
+
+En l'analisi preliminar de les dades hem vist que la distribució d'edats per ètnia no es igual per a totes. Les persones blanques assasinades solen ser mes majors que la resta. Però aquesta diferència es significant?
+
+Per a saber-ho farem un contrast d'hipotesi entre les edats de les persones blanques i les persones negres.
+
+Les hipòtesis seràn les següents:
+- Nula mitjanes edat igual
+- Alternativa mitjanes edat distint
+
+Comprovacio suposicions
+
+Realitzacio contrast
 
 # 6. Resolució del problema. A partir dels resultats obtinguts, quines són les conclusions? Els resultats permeten respondre al problema?
