@@ -194,8 +194,9 @@ pre code {
 <p>En aquest context, el Washington Post va començar a recollir tots els tirotejos amb víctimes mortals causades per policies als Estats Units. A <a href="https://www.kaggle.com/kwullum/fatal-police-shootings-in-the-us?select=ShareRaceByCity.csv">kaggle</a> hem trobat un conjunt de datasets amb aquestes dades que ens poden ajudar a analitzar aquesta situació. A més de les dades dels enfrontaments amb víctimes mortals, també disposem de quatre datasets més amb informació relativa a les ciutats dels Estats Units. Aquesta informació ens serà molt útil per a analitzar més en profunditat si hi ha diferencies entre ciutats respecte a les ètnies predominants de cadascuna.</p>
 <p>Algunes de les preguntes que volem respondre a partir de les dades són les següents:</p>
 <ul>
-<li>Hi ha diferències d’ingressos mitjans d’una ciutat depenent de la distribució d’ètnies.</li>
-<li>Hi ha ciutats on predominen persones d’unes ètnies sobre altres? Açò té alguna influència en les característiques de la ciutat?</li>
+<li>Hi ha diferències d’ingressos mitjans d’una ciutat depenent de la distribució d’ètnies?</li>
+<li>Les ciutats es poden agrupar per alguna característica?</li>
+<li>Podem estimar els ingressos mitjans d’una ciutat?</li>
 <li>Les víctimes mortals pertanyen majoritàriament a alguna ètnia?</li>
 <li>Predomina algun rang d’edat entre les persones que han sigut abatudes? Hi ha diferències entre ètnies?</li>
 </ul>
@@ -705,15 +706,69 @@ plot(df_clean_cities[c(5,3)], col=clustering_income_hs$cluster)</code></pre>
 </div>
 <div id="contrast-dhipòtesis" class="section level2">
 <h2>Contrast d’hipòtesis</h2>
-<p>En l’analisi preliminar de les dades hem vist que la distribució d’edats per ètnia no es igual per a totes. Les persones blanques assasinades solen ser mes majors que la resta. Però aquesta diferència es significant?</p>
-<p>Per a saber-ho farem un contrast d’hipotesi entre les edats de les persones blanques i les persones negres.</p>
-<p>Les hipòtesis seràn les següents: - Nula mitjanes edat igual - Alternativa mitjanes edat distint</p>
-<p>Comprovacio suposicions</p>
-<p>Realitzacio contrast</p>
+<p>En l’anàlisi preliminar de les dades hem vist que la distribució d’edats per ètnia no és igual per a totes. Les persones blanques assassinades solen ser més majors que la resta. Però aquesta diferència és significativa?</p>
+<p>Per a saber-ho farem un contrast d’hipòtesi entre la mitjana de les edats de les persones blanques i les persones negres.</p>
+<p>Les hipòtesis que farem seran les següents: - <span class="math inline">\(H_{0}\)</span>: <span class="math inline">\(\mu_{1}=\mu_{2}\)</span> - <span class="math inline">\(H_{1}\)</span>: <span class="math inline">\(\mu_{1}&gt;\mu_{2}\)</span></p>
+<p>On <span class="math inline">\(\mu_{1}\)</span> serà la mitjana de les edats de les persones blanques assassinades i <span class="math inline">\(\mu_{2}\)</span> la mitjana d’edat de les persones negres assassinades.</p>
+<p>Obtenim les dades de les persones blanques i negres:</p>
+<pre class="r"><code>df_white &lt;- df_clean[df_clean$race == &quot;W&quot;,]
+nrow(df_white)</code></pre>
+<pre><code>## [1] 977</code></pre>
+<pre class="r"><code>df_black &lt;- df_clean[df_clean$race == &quot;B&quot;,]
+nrow(df_black)</code></pre>
+<pre><code>## [1] 534</code></pre>
+<p>Comprovem que tenim 977 persones blanques i 534 persones negres.</p>
+<p>Per a fer el contrast d’hipòtesi tindrem en conter el següent:</p>
+<ol style="list-style-type: decimal">
+<li><p>És un contrast de dues mostres independents perquè les persones dels distints conjunts no estan relacionades entre elles.</p></li>
+<li><p>Podem assumir normalitat en les dades, ja que, en ser la mida de les mostres suficientment gran, podem aplicar el Teorema del Límit Central i assumir normalitat en les mitjanes de les mostres de la població.</p></li>
+<li><p>Serà un test unilateral perquè volem saber si la mitjana de les edats de les persones blanques és major que la de les persones negres. Seria bilateral si sols volguérem saber si són diferents.</p></li>
+<li><p>Per comprovar si existeix homoscedasticitat o heteroscedasticitat ens ajudarem de la funció var.test():</p></li>
+</ol>
+<pre class="r"><code>var.test(df_white$age, df_black$age)</code></pre>
+<pre><code>## 
+##  F test to compare two variances
+## 
+## data:  df_white$age and df_black$age
+## F = 1.464, num df = 976, denom df = 533, p-value = 1.002e-06
+## alternative hypothesis: true ratio of variances is not equal to 1
+## 95 percent confidence interval:
+##  1.258754 1.697162
+## sample estimates:
+## ratio of variances 
+##           1.464041</code></pre>
+<p>El p-valor resultant és molt menor que el nivell de significança 0.05, per tant, podem assumir que existeix heteroscedasticitat, les variàncies de les dues mostres són significativament diferents.</p>
+<p>Amb aquestes comprovacions prèvies realitzades, fem el test. Indiquem alternative = “greater” per a indicar la nostra hipòtesi alternativa, var.equal = FALSE per a indicar que hi ha heteroscedasticitat i conf.level = 0.95 per indicar que volem un nivell de confiança del 95%.</p>
+<pre class="r"><code>t.test(df_white$age, df_black$age, alternative = &quot;greater&quot;, var.equal = FALSE, conf.level = 0.95)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  df_white$age and df_black$age
+## t = 12.823, df = 1279.8, p-value &lt; 2.2e-16
+## alternative hypothesis: true difference in means is greater than 0
+## 95 percent confidence interval:
+##  7.048086      Inf
+## sample estimates:
+## mean of x mean of y 
+##  39.55988  31.47378</code></pre>
+<p>Observem que el p-valor resultant és menor que el nivell de significança, per tant, podem rebutja la hipòtesi nul·la <span class="math inline">\(H_0\)</span> i afirmar, amb un nivell de confiança del 95%, que la mitjana de les edats de les persones blanques és major que la mitjana de les edats de les persones negres.</p>
 </div>
 </div>
 <div id="resolució-del-problema.-a-partir-dels-resultats-obtinguts-quines-són-les-conclusions-els-resultats-permeten-respondre-al-problema" class="section level1">
 <h1>6. Resolució del problema. A partir dels resultats obtinguts, quines són les conclusions? Els resultats permeten respondre al problema?</h1>
+<p>Recordem les preguntes que ens havíem fet a l’inici:</p>
+<ul>
+<li><p><strong>Hi ha diferències d’ingressos mitjans d’una ciutat depenent de la distribució d’ètnies?</strong></p></li>
+<li><p>Hem vist gràficament la distribució d’ingressos depenent del percentatge de cada ètnia en la ciutat. Pareix que les ciutats amb més percentatge de persones hispanes o natives americanes tenen ingressos més baixos que ciutats amb percentatges alts de persones blanques. Però les diferències no eren molt grans.</p></li>
+<li><p><strong>Les ciutats es poden agrupar per alguna característica?</strong></p></li>
+<li><p>Si. Hem realitzat clustering amb el mètode kmeans() sobre les dades de les ciutats i hem obtingut 5 grups. La característica que més ens ha permés diferenciar aquests grups ha sigut l’ingrés mitja de les ciutats.</p></li>
+<li><p><strong>Podem estimar els ingressos mitjans d’una ciutat?</strong></p></li>
+<li><p>La resposta és sí. Hem creat tres models de regressió múltiple que ens permeten, encara que no siga d’una manera perfecta, estimar les variables de l’ingrés mitjà, percentatge de pobresa i percentatge de gent que ha superat els estudis superiors. Per a estimar els ingressos mitjans hem fet servir com a variables explicatives: share_white, share_black, share_hispanic, percent_completed_hs i poverty_rate.</p></li>
+<li><p><strong>Les víctimes mortals pertanyen majoritàriament a alguna ètnia?</strong></p></li>
+<li><p>En les dades que tenim, majoritàriament hi ha persones blanques. Com ja hem dit, açò és lògic, ja que en els Estats Units la majoria de persones són blanques. Però no podíem extraure conclusions a partir d’aquestes observacions, ja que no té gaire sentit comparar la quantitat de víctimes blanques o negres o hispanes sense saber la quantitat total de persones d’aquestes ètnies. Per això hem consultat les dades de la quantitat de persones de cada ètnia en 2017 i obtingut uns resultats d’on sí que podem extraure informació. En realitzar aquesta gràfica hem vist que les persones negres són les que més percentatge respecte a la seua població presenten de persones assassinades, seguides a prop per les persones hispanes i doblant a les persones blanques. Aquest resultat dóna arguments al moviment Black Lives Matter per exigir que es revisen aquests actes.</p></li>
+<li><p><strong>Predomina algun rang d’edat entre les persones que han sigut abatudes? Hi ha diferències entre ètnies?</strong></p></li>
+<li><p>En el gràfic de densitats comparat per ètnies hem vist que la majoria de persones assassinades solen tenir entre 20 i 40 anys. I també havíem vist que les persones blanques solien ser de més edat. Per comprovar si aquesta diferència era significativa, hem fet un contrast d’hipòtesi amb les edats de les persones blanques i les persones negres i hem arribat a la conclusió que, efectivament, les edats de les persones blanques són significativament majors que les edats de les persones negres assassinades.</p></li>
+</ul>
 </div>
 
 
