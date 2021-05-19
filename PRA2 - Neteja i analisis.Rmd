@@ -112,7 +112,7 @@ df_clean$Median.Income[df_clean$Median.Income == 0] <- mean_income
 
 Continuem amb el tractament de les dades:
 
-- Pasarem les variables: manner_of_death, armed, gender, race, threat_level i flee a tipus factor.
+- Passarem les variables: manner_of_death, armed, gender, race, threat_level i flee a tipus factor.
 - I les variables: percent_completed_hs, poverty_rate, share_white, share_asian, share_black, share_native_american i share_hispanic a tipus numeric.
 
 ```{r, eval=TRUE, echo=TRUE}
@@ -135,7 +135,7 @@ head(df_clean)
 
 ## Valors buits i extrems
 
-Una vegada tenim les dades en el format que volem, comprovem si hi ha algun valor buit entot el dataframe:
+Una vegada tenim les dades en el format que volem, comprovem si hi ha algun valor buit en tot el dataframe:
 ```{r, eval=TRUE, echo=TRUE}
 colSums(is.na(df_clean))
 ```
@@ -146,13 +146,13 @@ Vegem que tenim 71 edats desconegudes.
 boxplot(df_clean$age)$out
 ```
 
-Tenim uns quants valors extrems en la variable edat, que corresponen a edats majors de 70 anys. Com aquest valors podrien influir en la mitjana, anema a assignar als valors NA la mediana, que es mes robusta contra aquests efectes.
+Tenim uns quants valors extrems en la variable edat, que corresponen a edats majors de 70 anys. Com aquest valors podrien influir en la mitjana, anem a assignar als valors NA la mediana, que es mes robusta contra aquests efectes.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df_clean$age[is.na(df_clean$age)] <- median(df_clean$age[!is.na(df_clean$age)])
 colSums(is.na(df_clean))
 ```
 
-Ya no tenim valors NA en cap variable. Comprovem si hi ha elements amb cadena buida.
+Ja no tenim valors NA en cap variable. Comprovem si hi ha elements amb cadena buida.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 colSums(df_clean == "")
 ```
@@ -163,7 +163,7 @@ Ens indica que hi ha valors NA en date, ho comprovem.
 which(is.na(df_clean$date))
 ```
 
-En la comprovació ens diu que no hi ha camp valor de date amb NA.
+En la comprovació ens diu que no hi ha cap valor de date amb NA.
 
 __armed__
 
@@ -174,12 +174,12 @@ df_clean <- df_clean[df_clean$armed != "",]
 
 __race__
 
-Aquestes dades serà una mica mes complicat, ja que no son valors numèrics, si no classes a les que pot pertanyer el registre.
+Aquestes dades seran una mica més complicades, ja que no son valors numèrics, sinó classes a les que pot pertanyer el registre. Una possible solució seria la d'imputar tots aquest valors buits al grup majoritari.
 Vegem com es distribueixen.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 table(df_clean$race)
 ```
-Qui mes tenim es de gent "White" pero no podem assignar els 167 registres a white ja que aço podria despres fer-nos caure en analisis erronis ja que estariem inflant aquestes dades.  Com no es una gran quantitat de registres respecte al total, els eliminarem.
+El grup més nombrós és "White". Tot i aço, no podem assignar-li els 167 registres, ja que després podria fer-nos caure en anàlisis erronis pel fet d'estar inflant aquest grup. Com que no és una gran quantitat de registres respecte al total, les eliminarem.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df_clean <- df_clean[df_clean$race != "",]
@@ -190,7 +190,7 @@ __flee__
 table(df_clean$flee)
 ```
 
-Tenim una situació semblant a la variable race. Com son sols 44 registres els eliminarem.
+Tenim una situació semblant a la variable race. Com que són sols 44 registres, els eliminarem.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 df_clean <- df_clean[df_clean$flee != "",]
 ```
@@ -218,7 +218,7 @@ Ens centrarem en les relacions de les següents característiques: edat, gènere
 
 __Distribució per edats__
 
-En primer lloc mirarem si la distribució de l'edat és igual a totes les races:
+En primer lloc mirarem si la distribució de l'edat és igual a totes les races: ## afegir comprovació de normalitat
 ```{r, eval=TRUE, echo=TRUE}
 ggplot(df_clean, aes(x = age, colour=race, group=race)) + geom_density()
 ```
@@ -262,11 +262,11 @@ races <- c('A', 'B', 'H', 'N', 'O', 'W')
 barplot(races_total, names.arg = races)
 ```
 
-Veient el gràfic amb les dades comparades amb el total de població de cada ètnia pareix indicar que les persones negres, natives americanes i hispanes són més probables de rebre un tir d'un policia que una persona blanca.
+Veient el gràfic amb les dades comparades amb el total de població de cada ètnia pareix indicar que les persones negres, natives americanes i hispanes són més probables de ser assassinades per la bala d'un policia que una persona blanca.
 
 __Poverty i high school per ètnies__
 
-Per analitzar un poc mes en profunditat algunes possibles relacions entre les persones que han sigut disparades, discretitzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors en les franges: 0-24, 25-49, 50-74 i 75-100.
+Per analitzar un poc mes en profunditat algunes possibles relacions entre les persones que han sigut disparades, discretitzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors en les franges: 0-24, 25-49, 50-74 i 75-100. ## Vist que quasi totes es concentren en 75-100, fem grups de freqüència igual?
 ```{r, eval=TRUE, echo=TRUE}
 df_clean["range_highSchool"]<- cut(df_clean$percent_completed_hs, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
 df_clean["range_poverty"]<- cut(df_clean$poverty_rate, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
