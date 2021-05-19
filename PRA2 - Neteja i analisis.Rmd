@@ -1,11 +1,11 @@
 ---
 title: "Pràctica 2 - Aarón Puche i Roger Pardell"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
     toc: yes
     toc_depth: 3
+  pdf_document: default
 ---
 
 # 1. Descripció del dataset. Perquè és important i quina pregunta/problema pretén respondre?
@@ -400,9 +400,9 @@ Per finalitzar aquest punt, dir que no hem obtingut models que s'ajusten a la pe
 
 ## Clustering
 
-En aquest punt anem a agrupar el dataset de df_clean_cities en clusters per veure si les ciutats es podrien agrupar segons algunes característiques.
+En aquest punt agruparem el dataset de df_clean_cities en clusters per veure si les ciutats es podrien agrupar segons algunes característiques.
 
-Aplicarem l'algoritme kmeans. Per saber quin k serà el mes òptim farem servir el mètode del colze amb l'ajuda de la següent funció:
+Aplicarem l'algoritme kmeans. Per saber quin k serà l'òptim farem servir el mètode del colze amb l'ajuda de la següent funció:
 ```{r, eval=TRUE, echo=TRUE}
 library(cluster)
 library(fpc)
@@ -413,6 +413,26 @@ fviz_nbclust(df_clean_cities[3:10], kmeans, method = "wss") +
    xlab("Número de clústers") + 
    ylab("Suma total de quadrats dins dels grups")
 ```
+
+Veient el gràfic elegim k = 5, ja que a partir d'aquest valor el pendent s'estabilitza.
+
+Calcules els cluters amb la funció kmeans i vegem les variables comparades a la recerca de patrons que puguen seguir les dades:
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(12345)
+clustering_cities <- kmeans(df_clean_cities[3:10], 5)
+with(df_clean_cities[3:10], pairs(df_clean_cities[3:10], col=clustering_cities$cluster)) 
+```
+
+Pel que podem veure en aquest gràfic múltiple, la millor característica per la qual podem veure una divisió de les dades és Median.Income.
+
+Vegem una de les seues gràfiques per separat, en concret veurem el gràfic de les variables Median.Income i percent_completed_hs:
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(12345)
+clustering_income_hs <- kmeans(df_clean_cities[c(5,3)], 5)
+plot(df_clean_cities[c(5,3)], col=clustering_income_hs$cluster)
+```
+
+Comprovem com es divideixen els cinc clusters que s'han creat. Amb aquesta divisió podríem agrupar les ciutats en 5 grups depenent dels seus ingressos mitjans.
 
 ## Contrast d'hipòtesis
 
