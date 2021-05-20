@@ -462,16 +462,25 @@ clustering_cities <- kmeans(df_clean_cities[3:10], 2)
 with(df_clean_cities[3:10], pairs(df_clean_cities[3:10], col=clustering_cities$cluster)) 
 ```
 
-Pel que podem veure en aquest gràfic múltiple, la millor característica per la qual podem veure una divisió de les dades és Median.Income.
+Podem analitzar els centres de cada grup:
+```{r}
+clustering_cities$centers
+```
+
+Pel grup 1, el centre és una ciutat on el 91% dels habitants tenen el graduat escolar, la taxa de pobresa és del 9%, amb una mediana d'ingrés de 76.000$, els blancs representen el 72% de la població, mentre que els negres només el 8'8%, els hispans el 16%, els asiàtics el 8% i els natius americans el 1'2%.
+
+Pel que fa al grup 2, el centre és una ciutat on el 82'5% dels habitatnts tenen el graduat escolar, la taxa de pobresa és més alta, del 21'5%, amb una mediana d'ingrés de 41.500$, un percentatge de blancs del 70'6%, mentre que els negres representen el 15%, els hispans el 17'2%, els asiàtics el 2'5% i els natius americans el 1'9%.
+
+Pel que podem veure en aquest gràfic múltiple i els resultats dels centres, la millor característica per la qual podem veure una divisió de les dades és Median.Income.
 
 Vegem una de les seues gràfiques per separat, en concret veurem el gràfic de les variables Median.Income i percent_completed_hs:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-set.seed(12345)
-clustering_income_hs <- kmeans(df_clean_cities[c(5,3)], 2)
-plot(df_clean_cities[c(5,3)], col=clustering_income_hs$cluster)
+resultats <- clustering_cities$cluster
+cluster_1 <- cbind(df_clean_cities[c(4,5)], resultats)
+ggplot(cluster_1) + geom_point(mapping = aes(x = Median.Income, y = poverty_rate, colour = factor(resultats)), size = 0.6) + xlab("Mediana de l'ingrés") + ylab("Taxa de pobresa") + theme_classic() + theme(legend.position = "none")
 ```
 
-Comprovem com es divideixen els dos clusters que s'han creat. Amb aquesta divisió podríem agrupar les ciutats en 2 grups depenent dels seus ingressos mitjans.
+Comprovem com es divideixen els dos clusters que s'han creat amb les variables de la mediana de l'ingrés i la taxa de pobresa.
 
 ## Contrast d'hipòtesis
 
