@@ -24,11 +24,12 @@ Algunes de les preguntes que volem respondre a partir de les dades són les seg�
 
 Així, els datasets d'interés són els següents:
 ```{r, eval=TRUE, echo=TRUE}
-df_householdIncome <- read.csv("data/MedianHouseholdIncome2015.csv")
-df_poverty <- read.csv("data/PercentagePeopleBelowPovertyLevel.csv")
-df_highSchool <- read.csv("data/PercentOver25CompletedHighSchool.csv")
-df_policeKilling <- read.csv("data/PoliceKillingsUS.csv")
-df_shareRace <- read.csv("data/ShareRaceByCity.csv")
+df_householdIncome <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/MedianHouseholdIncome2015.csv")
+df_poverty <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentagePeopleBelowPovertyLevel.csv")
+df_highSchool <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentOver25CompletedHighSchool.csv")
+df_policeKilling <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PoliceKillingsUS.csv")
+df_shareRace <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/ShareRaceByCity.csv")
+
 
 head(df_policeKilling)
 dim(df_policeKilling)
@@ -218,17 +219,27 @@ Ens centrarem en les relacions de les següents característiques: edat, gènere
 
 __Distribució per edats__
 
-En primer lloc mirarem si la distribució de l'edat és igual a totes les races: ## afegir comprovació de normalitat
+En primer lloc mirarem si la distribució de l'edat és igual a totes les races:
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean, aes(x = age, colour=race, group=race)) + geom_density()
+ggplot(df_clean) + geom_density(aes(x = age, colour=race, group=race)) + geom_density(aes(x = age), size = 1) +
+  theme_classic() + xlab("Edat") + ylab("Densitat")
 ```
 Com es pot observar, les persones assassinades d'ètnia negra, hispana o nativa americana tenen una distribució de les edats bastant similar. Les edats de les persones asiàtiques són una mica més majors, però on es veu una diferència més gran és amb les persones blanques. Aquestes persones són més majors, no s'agrupen tant entorn als 20-30 anys com les altres.
+
+Comprovem també la normalitat a través del test de Shapiro-Wilks. Aquest mètode compara la distribució presentada amb una distribució normal. La hipòtesi nula considera que no hi ha diferència entre ambdues distribucions, mentre que la hipòtesi alternativa diu que sí hi ha diferència. Per tant, si el p valor és més gran de 0'05, assumirem que la distribució de la nostra variable és normal.
+
+```{r}
+shapiro.test(df_clean$age)
+```
+El resultat del test ens fa rebutjar la hipòtesi nula i acceptar l'alternativa. Per tant, podem concloure que la distribució de la variable edat no és normal. 
+
 
 __Distribució per gèneres__
 
 Vegem també la distribució per sexes:
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_bar(map = aes(gender, fill=gender))
+ggplot(df_clean) + geom_bar(map = aes(gender, fill=gender)) + theme_classic() + xlab("Gènere binari") +
+  ylab("Num. observacions")
 ```
 
 Podem destacar que, clarament, la gran majoria de persones disparades són homes.
@@ -237,7 +248,8 @@ __Distribució d'ètnies__
 
 Vegem ara com es distribueixen les races de les persones disparades:
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_bar(map = aes(race, fill=race))
+ggplot(df_clean) + geom_bar(map = aes(race, fill=race)) + theme_classic() + xlab("Raça") +
+  ylab("Num. observacions")
 ```
 
 De qui més registres tenim és de les persones blanques. És lògic veure aquests resultats, ja que la majoria de persones en Estats Units són de blanques, però, quina és la proporció de víctimes de cada respectiva ètnia respecte al total de persones d'eixa ètnia?
@@ -272,41 +284,66 @@ df_clean["range_highSchool"]<- cut(df_clean$percent_completed_hs, breaks = c(0,2
 df_clean["range_poverty"]<- cut(df_clean$poverty_rate, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
 ```
 
-Vegem la distribució de les dades en aquestes franges:
+ALTERNATIVA
+Per analitzar un poc mes en profunditat algunes possibles relacions entre les persones que han sigut disparades, discretitzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors per franges d'igual freqüència, és a dir, a partir dels quantils 25, 50 i 75:
 ```{r, eval=TRUE, echo=TRUE}
-table(df_clean$range_highSchool)
-table(df_clean$range_poverty)
+# Percentatge de graduat escolar escolar
+quantil1e <- quantile(df_clean$percent_completed_hs, 0.25)
+quantil2e <- quantile(df_clean$percent_completed_hs, 0.5)
+quantil3e <- quantile(df_clean$percent_completed_hs, 0.75)
+
+df_clean$range_highSchool <- "7'9 (min) - 80"
+df_clean[(df_clean$percent_completed_hs >= quantil1e & df_clean$percent_completed_hs < quantil2e),]$range_highSchool <- "80 - 85"
+df_clean[(df_clean$percent_completed_hs >= quantil2e & df_clean$percent_completed_hs < quantil3e),]$range_highSchool <- "85 - 89"
+df_clean[(df_clean$percent_completed_hs >= quantil3e),]$range_highSchool <- "89 - 100"
+df_clean$range_highSchool <- as.factor(df_clean$range_highSchool)
+
+# Percentatge de taxa de pobresa
+quantil1p <- quantile(df_clean$poverty_rate, 0.25)
+quantil2p <- quantile(df_clean$poverty_rate, 0.5)
+quantil3p <- quantile(df_clean$poverty_rate, 0.75)
+
+df_clean$range_poverty <- "0 - 15"
+df_clean[(df_clean$poverty_rate >= quantil1p & df_clean$poverty_rate < quantil2p),]$range_poverty <- "15 - 20"
+df_clean[(df_clean$poverty_rate >= quantil2p & df_clean$poverty_rate < quantil3p),]$range_poverty <- "20 - 24"
+df_clean[(df_clean$poverty_rate >= quantil3p),]$range_poverty <- "24 - 76'4 (max)"
+df_clean$range_poverty <- as.factor(df_clean$range_poverty)
+```
+
+
+Vegem la freqüència de les dades en aquestes franges:
+```{r, eval=TRUE, echo=TRUE}
+round(table(df_clean$range_highSchool)/nrow(df_clean),3)
+round(table(df_clean$range_poverty)/nrow(df_clean),3)
 ```
 
 Analitzem-ho gràficament:
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_bar(map = aes(x = range_highSchool, fill=race), position = "fill")
+ggplot(df_clean) + geom_bar(map = aes(x = range_highSchool, fill=race), position = "fill") + theme_classic() + xlab("Percentatge de gent amb grau escolar") + ylab("Num. observacions")
 ```
 
-Ens fixem en els percentatges entre 50 i 100% perquè en els anteriors hi han molt poques dades.
-Pareix que les víctimes blanques solen viure en ciutats amb un nivell d'estudis superiors. Destaca sobretot la diferència amb la gent hispana.
+Si considerem que les persones assassinades eren d'aquella ciutat, podem veure que, a mesura que augmenta el nivell ecolar, més percentatge de blancs hi trobem. En l'altre extrem, els hispans viuen en zones amb un baix nivell escolar. 
 
 ```{r, eval=TRUE, echo=TRUE}
-ggplot(df_clean) + geom_bar(map = aes(x = range_poverty, fill=race), position = "fill")
+ggplot(df_clean) + geom_bar(map = aes(x = range_poverty, fill=race), position = "fill") + theme_classic() + xlab("Taxa de pobresa") + ylab("Num. observacions")
 ```
 
-En aquest gràfic ens ficarem en les franges de 0 a 50%. Les altres franges no tenen suficients dades per a ser significants.
-Pareix que hi ha una diferència notable entre les persones blanques i negres. El percentatge de les persones blanques amb rang de pobresa entre el 0 i 25% és superior al de les persones blanques en el rang 25-50%. Amb les persones negres ocorre el contrari, hi ha un percentatge major de persones en rang de pobresa entre el 25-50% que entre el 0 i 25%.
+Seguint la lògica del gràfic anterior, a mesura que augmenta la taxa de pobresa, disminueix el percentatge de blancs mentre augmenta la de negres i hispans. Curiosament, en el grup amb major pobresa, el percentatge de blancs augmenta respecte al grup anterior, mentre que retrocedeix el grup d'hispans.
 
 __Median Income per ètnies__
 
 En aquest apartat compararem la distribució de l'ingrés mitja de les ciutats tenint en compte la representació de cada ètnia.
 ```{r, eval=TRUE, echo=TRUE}
-plot_share_white <- ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income))
-plot_share_black <- ggplot(df_clean) + geom_point(map = aes(x = share_black, y = Median.Income))
-plot_share_native_american <- ggplot(df_clean) + geom_point(map = aes(x = share_native_american, y = Median.Income))
-plot_share_asian <- ggplot(df_clean) + geom_point(map = aes(x = share_asian, y = Median.Income))
-plot_share_hispanic <-ggplot(df_clean) + geom_point(map = aes(x = share_hispanic, y = Median.Income))
+plot_share_white <- ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income)) + xlab("% blancs") + ylab("Mediana d'ing.")
+plot_share_black <- ggplot(df_clean) + geom_point(map = aes(x = share_black, y = Median.Income)) + xlab("% negres") + ylab("Mediana d'ing.")
+plot_share_native_american <- ggplot(df_clean) + geom_point(map = aes(x = share_native_american, y = Median.Income)) + xlab("% natius") + ylab("Mediana d'ing.")
+plot_share_asian <- ggplot(df_clean) + geom_point(map = aes(x = share_asian, y = Median.Income)) + xlab("% asiàtics") + ylab("Mediana d'ing.")
+plot_share_hispanic <-ggplot(df_clean) + geom_point(map = aes(x = share_hispanic, y = Median.Income)) + xlab("% hispans") + ylab("Mediana d'ing.")
 
 grid.arrange(plot_share_white, plot_share_black, plot_share_native_american, plot_share_asian, plot_share_hispanic, ncol=2)
 ```
 
-Com és lògic les ciutats amb un alt percentatge de persones blanques són les que més tenim.
+Així doncs, les ciutats amb major percentatge de blancs tenen una mediana d'ingressos més alta.
 
 Pel que fa a la comparació en els ingressos en ciutats amb un percentatge molt elevat de cada ètnia podem veure certes diferències. Les ciutats amb alt percentatge de persones blanques són les que més alts ingressos presenten, encara que també hi ha ciutats amb alt percentatge de persones negres o asiàtiques amb mitjans-alts ingressos. En canvi, en ciutats amb alt percentatge de persones hispanes o natives americanes no hi tenen uns grans ingressos.
 
@@ -326,8 +363,7 @@ I tampoc pareix que canvia la proporció de persones mortes per un tir o un tir 
 
 ## Regressió
 
-A partir de les dades ja tractades obtenim un dataset amb la informació respectiva a les ciutats.
-
+A partir de les dades ja tractades obtenim un dataset amb la informació respectiva a les ciutats. Aquestes representen cada una de les ciutats on hi ha hagut un assassinat en mans de la policia. 
 Contindrà les variables:
 
 - state
@@ -341,6 +377,7 @@ Contindrà les variables:
 - share_asian
 - share_hispanic
 
+Per tal de complir amb els supòsits de la regressió, eliminarem les observacions duplicdes.
 ```{r, eval=TRUE, echo=TRUE}
 df_clean_cities <- unique(df_clean[,c(1,2,14,15,16,17,18,19,20,21)])
 head(df_clean_cities)
@@ -357,7 +394,7 @@ Els valors d'aquesta taula estaran entre -1 i 1.
 - I 0 significarà que no hi ha relació.
 
 ```{r, eval=TRUE, echo=TRUE}
-cor(df_clean_cities[,c(3,4,5,6,7,10)])
+round(cor(df_clean_cities[,c(3,4,5,6,7,10)]),2)
 ```
 Veient els resultats podem destacar el següent:
 
@@ -373,9 +410,11 @@ model_1 <- lm(formula = Median.Income ~ share_white + share_black + share_hispan
 summary(model_1)
 ```
 
-Amb els p-valor podem comprovar que totes les variables són significants per a la construcció del model.
+Amb els p-valor podem comprovar que totes les variables són significatives al 1% per a la construcció del model. Així doncs, a la interceptció del model és al voltant dels 53.000€. A mesura que augmenta el percentatge de blancs, negres i pobres, la mediana dels ingressos baixa, mentre que augmenten a més percentatge de gent amb el graduat escolar.
 
-Per comprovar la qualitat del model ens fixem en el valor obtingut de R-squared. Com més proper a 1 siga, millor s'ajustarà el model a les dades. Hem obtingut un `r round(summary(model_1)$r.squared,2)`. S'ajusta a les dades, però no amb una gran exactitud.
+Amb els resultats, és curiós veure com el percentatge de blancs té un efecte negatiu a l'ingrés medià. Ens fa concloure que, més que la raça, el principal factor de l'ingrés és l'educació. Però com hem vist anteriorment, les ciutats amb més percentatge de gent amb graduat escolar tenen més percentatge de blancs. La correlació entre percentatge d'estudis i percentatge de blancs és `r round(cor(df_clean_cities$percent_completed_hs, df_clean_cities$share_white),2)`.
+
+Per comprovar la qualitat del model ens fixem en el valor obtingut de R-squared, que ens diu quin percentatge de la variabilitat de les dades el model és capaç d'explicar. Com més proper a 1 siga, millor s'ajustarà el model a les dades. Hem obtingut un `r round(summary(model_1)$r.squared,2)`. S'ajusta a les dades, però no amb una gran exactitud.
 
 __Model 2:__ Predicció de la variable poverty_rate amb share_white, share_black, share_hispanic, percent_completed_hs i Median.Income.
 ```{r, eval=TRUE, echo=TRUE}
@@ -409,18 +448,17 @@ library(cluster)
 library(fpc)
 library(factoextra)
 
-fviz_nbclust(df_clean_cities[3:10], kmeans, method = "wss") +
-   labs(subtitle = "Mètode Elbow") +
+fviz_nbclust(df_clean_cities[3:10], kmeans, method = "silhouette") +
    xlab("Número de clústers") + 
-   ylab("Suma total de quadrats dins dels grups")
+   ylab("Silueta")
 ```
 
-Veient el gràfic elegim k = 5, ja que a partir d'aquest valor el pendent s'estabilitza.
+El mètode de la silueta mesura com de bé cada observació s'ajusta al grup assignat comparant-ho amb la matriu de distàncies. Per tant, aquest és el cas pel valor k = 2.
 
 Calcules els cluters amb la funció kmeans i vegem les variables comparades a la recerca de patrons que puguen seguir les dades:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 set.seed(12345)
-clustering_cities <- kmeans(df_clean_cities[3:10], 5)
+clustering_cities <- kmeans(df_clean_cities[3:10], 2)
 with(df_clean_cities[3:10], pairs(df_clean_cities[3:10], col=clustering_cities$cluster)) 
 ```
 
@@ -429,7 +467,7 @@ Pel que podem veure en aquest gràfic múltiple, la millor característica per l
 Vegem una de les seues gràfiques per separat, en concret veurem el gràfic de les variables Median.Income i percent_completed_hs:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 set.seed(12345)
-clustering_income_hs <- kmeans(df_clean_cities[c(5,3)], 5)
+clustering_income_hs <- kmeans(df_clean_cities[c(5,3)], 2)
 plot(df_clean_cities[c(5,3)], col=clustering_income_hs$cluster)
 ```
 
