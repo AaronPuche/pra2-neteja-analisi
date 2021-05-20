@@ -24,11 +24,17 @@ Algunes de les preguntes que volem respondre a partir de les dades són les seg�
 
 Així, els datasets d'interés són els següents:
 ```{r, eval=TRUE, echo=TRUE}
-df_householdIncome <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/MedianHouseholdIncome2015.csv")
-df_poverty <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentagePeopleBelowPovertyLevel.csv")
-df_highSchool <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentOver25CompletedHighSchool.csv")
-df_policeKilling <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PoliceKillingsUS.csv")
-df_shareRace <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/ShareRaceByCity.csv")
+#df_householdIncome <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/MedianHouseholdIncome2015.csv")
+#df_poverty <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentagePeopleBelowPovertyLevel.csv")
+#df_highSchool <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentOver25CompletedHighSchool.csv")
+#df_policeKilling <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PoliceKillingsUS.csv")
+#df_shareRace <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/ShareRaceByCity.csv")
+
+df_householdIncome <- read.csv("data/MedianHouseholdIncome2015.csv")
+df_poverty <- read.csv("data/PercentagePeopleBelowPovertyLevel.csv")
+df_highSchool <- read.csv("data/PercentOver25CompletedHighSchool.csv")
+df_policeKilling <- read.csv("data/PoliceKillingsUS.csv")
+df_shareRace <- read.csv("data/ShareRaceByCity.csv")
 
 
 head(df_policeKilling)
@@ -224,6 +230,7 @@ En primer lloc mirarem si la distribució de l'edat és igual a totes les races:
 ggplot(df_clean) + geom_density(aes(x = age, colour=race, group=race)) + geom_density(aes(x = age), size = 1) +
   theme_classic() + xlab("Edat") + ylab("Densitat")
 ```
+
 Com es pot observar, les persones assassinades d'ètnia negra, hispana o nativa americana tenen una distribució de les edats bastant similar. Les edats de les persones asiàtiques són una mica més majors, però on es veu una diferència més gran és amb les persones blanques. Aquestes persones són més majors, no s'agrupen tant entorn als 20-30 anys com les altres.
 
 Comprovem també la normalitat a través del test de Shapiro-Wilks. Aquest mètode compara la distribució presentada amb una distribució normal. La hipòtesi nula considera que no hi ha diferència entre ambdues distribucions, mentre que la hipòtesi alternativa diu que sí hi ha diferència. Per tant, si el p valor és més gran de 0'05, assumirem que la distribució de la nostra variable és normal.
@@ -278,13 +285,6 @@ Veient el gràfic amb les dades comparades amb el total de població de cada èt
 
 __Poverty i high school per ètnies__
 
-Per analitzar un poc mes en profunditat algunes possibles relacions entre les persones que han sigut disparades, discretitzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors en les franges: 0-24, 25-49, 50-74 i 75-100. ## Vist que quasi totes es concentren en 75-100, fem grups de freqüència igual?
-```{r, eval=TRUE, echo=TRUE}
-df_clean["range_highSchool"]<- cut(df_clean$percent_completed_hs, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
-df_clean["range_poverty"]<- cut(df_clean$poverty_rate, breaks = c(0,24,49,74,100), labels = c("0 - 24","25 - 49","50 - 74","75 - 100"))
-```
-
-ALTERNATIVA
 Per analitzar un poc mes en profunditat algunes possibles relacions entre les persones que han sigut disparades, discretitzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors per franges d'igual freqüència, és a dir, a partir dels quantils 25, 50 i 75:
 ```{r, eval=TRUE, echo=TRUE}
 # Percentatge de graduat escolar escolar
@@ -471,7 +471,7 @@ clustering_income_hs <- kmeans(df_clean_cities[c(5,3)], 2)
 plot(df_clean_cities[c(5,3)], col=clustering_income_hs$cluster)
 ```
 
-Comprovem com es divideixen els cinc clusters que s'han creat. Amb aquesta divisió podríem agrupar les ciutats en 5 grups depenent dels seus ingressos mitjans.
+Comprovem com es divideixen els dos clusters que s'han creat. Amb aquesta divisió podríem agrupar les ciutats en 2 grups depenent dels seus ingressos mitjans.
 
 ## Contrast d'hipòtesis
 
@@ -499,7 +499,7 @@ Per a fer el contrast d'hipòtesi tindrem en conter el següent:
 
 1. És un contrast de dues mostres independents perquè les persones dels distints conjunts no estan relacionades entre elles.
 
-2. Podem assumir normalitat en les dades, ja que, en ser la mida de les mostres suficientment gran, podem aplicar el Teorema del Límit Central i assumir normalitat en les mitjanes de les mostres de la població.
+2. Podem assumir normalitat, ja que, en ser la mida de les mostres suficientment gran, podem aplicar el Teorema del Límit Central i assumir normalitat en les mitjanes de les mostres de la població.
 
 3. Serà un test unilateral perquè volem saber si la mitjana de les edats de les persones blanques és major que la de les persones negres. Seria bilateral si sols volguérem saber si són diferents.
 
@@ -527,7 +527,7 @@ Recordem les preguntes que ens havíem fet a l'inici:
 
 - __Les ciutats es poden agrupar per alguna característica?__
 
-- Si. Hem realitzat clustering amb el mètode kmeans() sobre les dades de les ciutats i hem obtingut 5 grups. La característica que més ens ha permés diferenciar aquests grups ha sigut l'ingrés mitja de les ciutats.
+- Si. Hem realitzat clustering amb el mètode kmeans() sobre les dades de les ciutats i hem obtingut 2 grups. La característica que més ens ha permés diferenciar aquests grups ha sigut l'ingrés mitja de les ciutats.
 
 - __Podem estimar els ingressos mitjans d'una ciutat?__
 
