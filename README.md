@@ -1,1 +1,0 @@
-# pra2-neteja-analisi

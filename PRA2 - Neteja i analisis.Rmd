@@ -489,6 +489,7 @@ En l'anàlisi preliminar de les dades hem vist que la distribució d'edats per �
 Per a saber-ho farem un contrast d'hipòtesi entre la mitjana de les edats de les persones blanques i les persones negres.
 
 Les hipòtesis que farem seran les següents:
+
 - $H_{0}$: $\mu_{1}=\mu_{2}$
 - $H_{1}$: $\mu_{1}>\mu_{2}$
 
