@@ -396,13 +396,15 @@ Seguint la lògica del gràfic anterior, a mesura que augmenta la taxa de pobres
 
 __Median Income per ètnies__
 
-En aquest apartat compararem la distribució de l'ingrés mitja de les ciutats tenint en compte la representació de cada ètnia.
+En aquest apartat compararem la distribució de l'ingrés mitja de les ciutats tenint en compte la representació de cada ètnia. Com hem fet abans, agafarem una observació única per a cada ciutat.
+
 ```{r, eval=TRUE, echo=TRUE}
-plot_share_white <- ggplot(df_clean) + geom_point(map = aes(x = share_white, y = Median.Income)) + xlab("% blancs") + ylab("Mediana d'ing.")
-plot_share_black <- ggplot(df_clean) + geom_point(map = aes(x = share_black, y = Median.Income)) + xlab("% negres") + ylab("Mediana d'ing.")
-plot_share_native_american <- ggplot(df_clean) + geom_point(map = aes(x = share_native_american, y = Median.Income)) + xlab("% natius") + ylab("Mediana d'ing.")
-plot_share_asian <- ggplot(df_clean) + geom_point(map = aes(x = share_asian, y = Median.Income)) + xlab("% asiàtics") + ylab("Mediana d'ing.")
-plot_share_hispanic <-ggplot(df_clean) + geom_point(map = aes(x = share_hispanic, y = Median.Income)) + xlab("% hispans") + ylab("Mediana d'ing.")
+df_clean_etnies <- unique(df_clean[c("city", "Median.Income", "share_white", "share_black","share_native_american","share_asian","share_hispanic")])
+plot_share_white <- ggplot(df_clean_etnies) + geom_point(map = aes(x = share_white, y = Median.Income)) + xlab("% blancs") + ylab("Mediana d'ing.")
+plot_share_black <- ggplot(df_clean_etnies) + geom_point(map = aes(x = share_black, y = Median.Income)) + xlab("% negres") + ylab("Mediana d'ing.")
+plot_share_native_american <- ggplot(df_clean_etnies) + geom_point(map = aes(x = share_native_american, y = Median.Income)) + xlab("% natius") + ylab("Mediana d'ing.")
+plot_share_asian <- ggplot(df_clean_etnies) + geom_point(map = aes(x = share_asian, y = Median.Income)) + xlab("% asiàtics") + ylab("Mediana d'ing.")
+plot_share_hispanic <-ggplot(df_clean_etnies) + geom_point(map = aes(x = share_hispanic, y = Median.Income)) + xlab("% hispans") + ylab("Mediana d'ing.")
 
 grid.arrange(plot_share_white, plot_share_black, plot_share_native_american, plot_share_asian, plot_share_hispanic, ncol=2)
 ```
