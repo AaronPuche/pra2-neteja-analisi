@@ -10,7 +10,7 @@ output:
 
 # 1. Descripció del dataset. Perquè és important i quina pregunta/problema pretén respondre?
 
-Aquest darrer any hem vist com han augmentat considerablement les manifestacions del moviment Black Lives Matter amb motiu de [l'assassinat del ciutadà George Floyd en mans de l'actualment expolicia Derek Chauvin](https://www.europapress.es/internacional/noticia-sentencia-contra-expolicia-asesino-george-floyd-leera-16-junio-20210424033426.html). Però no pareix ser un cas aïllat. Ja durant el 2014 hi va haver forts disturbis a la ciutat de Fergusson com a resposta per l'assassinat a mans d'una policia de Michael Brown, un jove Afroamericà de 18 anys.
+Aquest darrer any hem vist com han augmentat considerablement les manifestacions del moviment Black Lives Matter en motiu de [l'assassinat del ciutadà George Floyd en mans de l'actualment expolicia Derek Chauvin](https://www.europapress.es/internacional/noticia-sentencia-contra-expolicia-asesino-george-floyd-leera-16-junio-20210424033426.html). Però no pareix ser un cas aïllat. Ja durant el 2014 hi va haver forts disturbis a la ciutat de Fergusson com a resposta per l'assassinat a mans d'una policia de Michael Brown, un jove Afroamericà de 18 anys.
 
 En aquest context, el Washington Post va començar a recollir tots els tirotejos amb víctimes mortals causades per policies als Estats Units. A [kaggle](https://www.kaggle.com/kwullum/fatal-police-shootings-in-the-us?select=ShareRaceByCity.csv) hem trobat un conjunt de datasets amb aquestes dades que ens poden ajudar a analitzar aquesta situació. A més de les dades dels enfrontaments amb víctimes mortals, també disposem de quatre datasets més amb informació relativa a les ciutats dels Estats Units. Aquesta informació ens serà molt útil per a analitzar més en profunditat si hi ha diferencies entre ciutats respecte a les ètnies predominants de cadascuna.
 
@@ -44,7 +44,7 @@ str(df_householdIncome)
 
 Aquest conté les dades dels ingressos mitjans per família. Consta de 29322 registres i 3 variables. Les variables són:
 
-- Geographic.Area: Tipus character. Conte les inicials dels estats al qual pertany la ciutat.
+- Geographic.Area: Tipus character. Conté les inicials dels estats al qual pertany la ciutat.
 - City: Tipus character. Nom de la ciutat.
 - Median.Income: Tipus character, més endavant ens serà necessari passar-lo a numèric. Representa la mitjana d'ingressos.
 
@@ -344,12 +344,14 @@ Veient el gràfic amb les dades comparades amb el total de població de cada èt
 
 __Poverty i high school per ètnies__
 
-Per analitzar un poc mes en profunditat algunes possibles relacions entre les persones que han sigut disparades, discretitzarem les variables percent_completed_hs i poverty_rate. Dividirem els seus valors per franges d'igual freqüència, és a dir, a partir dels quantils 25, 50 i 75:
+Per analitzar un poc mes en profunditat algunes possibles relacions entre les persones que han sigut disparades, discretitzarem les variables percent_completed_hs i poverty_rate. Com que aquests dos atributs fan referència a les ciutats on han estat assassinades les persones, agafem només una única observació de cada ciutat (en cas de que més d'un assassinat s'hagués comès en una mateixa ciutat). Dividirem els seus valors per franges d'igual freqüència, és a dir, a partir dels quantils 25, 50 i 75:
+
 ```{r, eval=TRUE, echo=TRUE}
 # Percentatge de graduat escolar escolar
-quantil1e <- quantile(df_clean$percent_completed_hs, 0.25)
-quantil2e <- quantile(df_clean$percent_completed_hs, 0.5)
-quantil3e <- quantile(df_clean$percent_completed_hs, 0.75)
+completed_hs <- unique(df_clean[c("city","percent_completed_hs")])
+quantil1e <- quantile(completed_hs$percent_completed_hs, 0.25)
+quantil2e <- quantile(completed_hs$percent_completed_hs, 0.5)
+quantil3e <- quantile(completed_hs$percent_completed_hs, 0.75)
 
 df_clean$range_highSchool <- "7'9 (min) - 80"
 df_clean[(df_clean$percent_completed_hs >= quantil1e & df_clean$percent_completed_hs < quantil2e),]$range_highSchool <- "80 - 85"
@@ -358,9 +360,10 @@ df_clean[(df_clean$percent_completed_hs >= quantil3e),]$range_highSchool <- "89 
 df_clean$range_highSchool <- as.factor(df_clean$range_highSchool)
 
 # Percentatge de taxa de pobresa
-quantil1p <- quantile(df_clean$poverty_rate, 0.25)
-quantil2p <- quantile(df_clean$poverty_rate, 0.5)
-quantil3p <- quantile(df_clean$poverty_rate, 0.75)
+pov_rate <- unique(df_clean[c("city","poverty_rate")])
+quantil1p <- quantile(pov_rate$poverty_rate, 0.25)
+quantil2p <- quantile(pov_rate$poverty_rate, 0.5)
+quantil3p <- quantile(pov_rate$poverty_rate, 0.75)
 
 df_clean$range_poverty <- "0 - 15"
 df_clean[(df_clean$poverty_rate >= quantil1p & df_clean$poverty_rate < quantil2p),]$range_poverty <- "15 - 20"
@@ -375,6 +378,7 @@ Vegem la freqüència de les dades en aquestes franges:
 round(table(df_clean$range_highSchool)/nrow(df_clean),3)
 round(table(df_clean$range_poverty)/nrow(df_clean),3)
 ```
+Veiem com, degut a que hi ha ciutats on s'han comès més d'un assassinat, les freqüències de les observacions diferèixen amb la divisió de les freqüències fetes anteriorment.
 
 Analitzem-ho gràficament:
 ```{r, eval=TRUE, echo=TRUE}
@@ -388,6 +392,7 @@ ggplot(df_clean) + geom_bar(map = aes(x = range_poverty, fill=race), position = 
 ```
 
 Seguint la lògica del gràfic anterior, a mesura que augmenta la taxa de pobresa, disminueix el percentatge de blancs mentre augmenta la de negres i hispans. Curiosament, en el grup amb major pobresa, el percentatge de blancs augmenta respecte al grup anterior, mentre que retrocedeix el grup d'hispans.
+
 
 __Median Income per ètnies__
 
