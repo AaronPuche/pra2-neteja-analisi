@@ -6,6 +6,7 @@
 
 ### Descripció dels arxius:
 - **data/:** 
+    - *contribucions.PNG*: Taula de contribucions.
     - *Fatal Police Shooting in the US.url:* Enllaç a les dades en Kaggle.
     - *MedianHouseholdIncome2015.csv:* Dataset amb la mitjana d'ingressos de cada ciutat.
     - *PercentOver25CompletedHighSchool.csv:* Dataset amb els percentatges d'estudis superiors superats per ciutat.

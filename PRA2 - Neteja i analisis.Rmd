@@ -35,26 +35,54 @@ df_poverty <- read.csv("data/PercentagePeopleBelowPovertyLevel.csv")
 df_highSchool <- read.csv("data/PercentOver25CompletedHighSchool.csv")
 df_policeKilling <- read.csv("data/PoliceKillingsUS.csv")
 df_shareRace <- read.csv("data/ShareRaceByCity.csv")
-
-
-head(df_policeKilling)
-dim(df_policeKilling)
-head(df_householdIncome)
-dim(df_householdIncome)
-head(df_poverty)
-dim(df_poverty)
-head(df_highSchool)
-dim(df_highSchool)
-head(df_shareRace)
-dim(df_shareRace)
 ```
 
-El primer mostra totes les víctimes mortals en mans de la policia. En total, tenim 2535 observacions i 14 atributs, entre els quals hi trobem l'edat, l'estat i la ciutat on ha succeït i la manera en què han mort.
+Analitzem individualment cadascun dels datasets amb l'ajuda de la funció str():
+```{r, eval=TRUE, echo=TRUE}
+str(df_householdIncome)
+```
 
-Els altres quatre conjunts són formats per unes 29300 observacions (entre 29268 i 29329), i un total de 10 atributs diferents. Cada observació és una ciutat americana, i els atributs són valors demogràfics i econòmics d'aquestes ciutats, per exemple, el percentatge de persones segons raça, la mediana dels ingressos familiars, etc.
+Aquest conté les dades dels ingressos mitjans per família. Consta de 29322 registres i 3 variables. Les variables són:
 
-Aquests cinc conjunts aporten les característiques individuals de les víctimes, així com les variables ambientals de les ciutats on han succeït els assassinats. Així, se'ns permet fer una anàlisi més holística de la situació.
+- Geographic.Area: Tipus character. Conte les inicials dels estats al qual pertany la ciutat.
+- City: Tipus character. Nom de la ciutat.
+- Median.Income: Tipus character, més endavant ens serà necessari passar-lo a numèric. Representa la mitjana d'ingressos.
 
+```{r, eval=TRUE, echo=TRUE}
+str(df_poverty)
+```
+
+Pel que fa a df_poverty, representa el percentatge de pobresa de les ciutats. Té 29329 registres amb 3 variables.
+
+Com també df_householdIncome té les variables Geographic.Area i City. La tercera variable, poverty_rate, és de tipus character i indica el percentatge de pobresa en la ciutat.
+
+```{r, eval=TRUE, echo=TRUE}
+str(df_highSchool)
+```
+
+Aquest tercer dataset conté també informació sobre les ciutats. Té 29329 registres amb tres variables. Inclou Geographic.Area i City. A més podem veure la variable percent_completed_hs amb el percentatge de gent que ha superat estudis superiors.
+
+```{r, eval=TRUE, echo=TRUE}
+str(df_shareRace)
+```
+
+I aquest és l'últim amb informació sobre les ciutats. Té 29628 registres amb 7 variables.
+
+A més de area_geografica i City inclou la distribució d'ètnies en la ciutat. Les variables que representen el percentatge de cada ètnia són:
+
+- share_white
+- share_black
+- share_native_american
+- share_asian          
+- share_hispanic       
+
+```{r, eval=TRUE, echo=TRUE}
+str(df_policeKilling)
+```
+
+El dataset df_policeKilling mostra totes les víctimes mortals en mans de la policia. En total, tenim 2535 observacions i 14 atributs, entre els quals hi trobem l'edat, l'estat i la ciutat on ha succeït i la manera en què han mort.
+
+Per finalitzar aquest punt, dir que aquests cinc conjunts aporten les característiques individuals de les víctimes, així com les variables ambientals de les ciutats on han succeït els assassinats. Així, se'ns permet fer una anàlisi més holística de la situació.
 
 # 2. Integració i selecció de les dades d’interès a analitzar.
 
@@ -140,12 +168,13 @@ head(df_clean)
 ```
 
 
-## Valors buits i extrems
+## Valors buits, extrems i zeros
 
 Una vegada tenim les dades en el format que volem, comprovem si hi ha algun valor buit en tot el dataframe:
 ```{r, eval=TRUE, echo=TRUE}
 colSums(is.na(df_clean))
 ```
+
 __age__
 
 Vegem que tenim 71 edats desconegudes.
@@ -202,18 +231,43 @@ Tenim una situació semblant a la variable race. Com que són sols 44 registres,
 df_clean <- df_clean[df_clean$flee != "",]
 ```
 
-En aquest punt ja tenim les dades tractades. 
-Comprovem:
+Comprovem que els canvis s'han realitzar correctament:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 colSums(df_clean == "")
 ```
 
 No tenim cap valor buit.
 
+Per últim, comprovem si hi ha registres amb el valor 0:
+```{r, eval=TRUE, echo=TRUE}
+colSums(df_clean == 0)
+```
+
+Podem observar zeros en:
+
+- signs_of_mental_illness
+- body_camera
+- poverty_rate
+- share_black
+- share_native_american
+- share_asian
+- share_hispanic 
+
+signs_of_mental_illness i body_camera són variables dicotòmiques on 0 significarà que no i 1 que si, així que és correcte que existeixin registres amb zeros.
+
+Que hi haja un registres amb zero en poverty_rate és excepcional, però no és una data irreal. Podria ser que alguna ciutat petita no existira cap persona en la pobresa. Vegem quina ciutat és:
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+df_clean[df_clean$poverty_rate == 0,]
+```
+
+La ciutat és Huntley, Montana. Efectivament, és una ciutat amb molt pocs habitants. Com [podem observar](https://es.wikipedia.org/wiki/Huntley_(Montana)), amb data de 2010 tenia 446 habitants.
+
+I per últim, pel que fa als zeros en les variables de percentatge d'ètnies, no són molts registres respecte al total, així que no és estrany que en algunes ciutats no hi haja ciutadans d'alguna de les ètnies.
+
+En aquest punt ja tenim les dades tractades. Per finalitzar, comprovem que estan amb el tipus de dades adequat.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 str(df_clean)
 ```
-I finalment, comprovem que estan amb el tipus de dades adequat.
 
 # 4 i 5. Anàlisi de les dades i representació dels resultats a partir de taules i gràfiques.
 
@@ -233,13 +287,18 @@ ggplot(df_clean) + geom_density(aes(x = age, colour=race, group=race)) + geom_de
 
 Com es pot observar, les persones assassinades d'ètnia negra, hispana o nativa americana tenen una distribució de les edats bastant similar. Les edats de les persones asiàtiques són una mica més majors, però on es veu una diferència més gran és amb les persones blanques. Aquestes persones són més majors, no s'agrupen tant entorn als 20-30 anys com les altres.
 
-Comprovem també la normalitat a través del test de Shapiro-Wilks. Aquest mètode compara la distribució presentada amb una distribució normal. La hipòtesi nula considera que no hi ha diferència entre ambdues distribucions, mentre que la hipòtesi alternativa diu que sí hi ha diferència. Per tant, si el p valor és més gran de 0'05, assumirem que la distribució de la nostra variable és normal.
+Observem gràficament si la variable edat segueix una distribució normal o no amb un gràfic QQ-plot:
+```{r}
+qqnorm(df_clean$age, pch = 1, frame = FALSE)
+qqline(df_clean$age, col = "steelblue", lwd = 2)
+```
+
+Pareix que s'ajusta, però els punts als extrems s'allunyen de la línia de normalitat. Ara bé, són significatives aquestes diferències respecte a la normalitat? Ho comprovarem a través del test de Shapiro-Wilks. Aquest mètode compara la distribució presentada amb una distribució normal. La hipòtesi nul·la considera que no hi ha diferència entre ambdues distribucions, mentre que la hipòtesi alternativa diu que sí hi ha diferència. Per tant, si el p valor és més gran de 0'05, assumirem que la distribució de la nostra variable és normal.
 
 ```{r}
 shapiro.test(df_clean$age)
 ```
 El resultat del test ens fa rebutjar la hipòtesi nula i acceptar l'alternativa. Per tant, podem concloure que la distribució de la variable edat no és normal. 
-
 
 __Distribució per gèneres__
 
@@ -261,7 +320,7 @@ ggplot(df_clean) + geom_bar(map = aes(race, fill=race)) + theme_classic() + xlab
 
 De qui més registres tenim és de les persones blanques. És lògic veure aquests resultats, ja que la majoria de persones en Estats Units són de blanques, però, quina és la proporció de víctimes de cada respectiva ètnia respecte al total de persones d'eixa ètnia?
 
-així que s'ajustaran bastant bé.
+Per comprovar-ho, consultarem la següent [gràfica](https://en.wikipedia.org/wiki/Demographics_of_the_United_States) que té informació sobre el cens per ètnia als Estats Units en 2017.
 
 <img src="data/tabla_poblacio.PNG" width="500">
 
@@ -505,20 +564,20 @@ nrow(df_black)
 ```
 Comprovem que tenim 977 persones blanques i 534 persones negres.
 
-Per a fer el contrast d'hipòtesi tindrem en conter el següent:
+Per a fer el contrast d'hipòtesi Farem les següents __suposicions__:
 
-1. És un contrast de dues mostres independents perquè les persones dels distints conjunts no estan relacionades entre elles.
+1. És un contrast de __dues mostres independents__ perquè les persones dels distints conjunts no estan relacionades entre elles.
 
-2. Podem assumir normalitat, ja que, en ser la mida de les mostres suficientment gran, podem aplicar el Teorema del Límit Central i assumir normalitat en les mitjanes de les mostres de la població.
+2. Podem assumir __normalitat__, ja que, en ser la mida de les mostres suficientment gran, podem aplicar el Teorema del Límit Central i assumir normalitat en les mitjanes de les mostres de la població.
 
-3. Serà un test unilateral perquè volem saber si la mitjana de les edats de les persones blanques és major que la de les persones negres. Seria bilateral si sols volguérem saber si són diferents.
+3. Serà un __test unilateral__ perquè volem saber si la mitjana de les edats de les persones blanques és major que la de les persones negres. Seria bilateral si sols volguérem saber si són diferents.
 
-4. Per comprovar si existeix homoscedasticitat o heteroscedasticitat ens ajudarem de la funció var.test():
+4. Per comprovar si existeix __homoscedasticitat o heteroscedasticitat__ ens ajudarem de la funció var.test():
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 var.test(df_white$age, df_black$age)
 ```
 
-El p-valor resultant és molt menor que el nivell de significança 0.05, per tant, podem assumir que existeix heteroscedasticitat, les variàncies de les dues mostres són significativament diferents.
+El p-valor resultant és molt menor que el nivell de significança 0.05, per tant, podem assumir que existeix heteroscedasticitat, les __variàncies de les dues mostres són significativament diferents__.
 
 Amb aquestes comprovacions prèvies realitzades, fem el test. Indiquem alternative = "greater" per a indicar la nostra hipòtesi alternativa, var.equal = FALSE per a indicar que hi ha heteroscedasticitat i conf.level = 0.95 per indicar que volem un nivell de confiança del 95%.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -550,3 +609,8 @@ Recordem les preguntes que ens havíem fet a l'inici:
 - __Predomina algun rang d'edat entre les persones que han sigut abatudes? Hi ha diferències entre ètnies?__
 
 - En el gràfic de densitats comparat per ètnies hem vist que la majoria de persones assassinades solen tenir entre 20 i 40 anys. I també havíem vist que les persones blanques solien ser de més edat. Per comprovar si aquesta diferència era significativa, hem fet un contrast d'hipòtesi amb les edats de les persones blanques i les persones negres i hem arribat a la conclusió que, efectivament, les edats de les persones blanques són significativament majors que les edats de les persones negres assassinades.
+
+# 7. Taula de contribucions
+
+  <img src="data/contribucions.PNG" width="500">
+
