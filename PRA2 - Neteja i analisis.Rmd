@@ -409,7 +409,7 @@ plot_share_hispanic <-ggplot(df_clean_etnies) + geom_point(map = aes(x = share_h
 grid.arrange(plot_share_white, plot_share_black, plot_share_native_american, plot_share_asian, plot_share_hispanic, ncol=2)
 ```
 
-Així doncs, les ciutats amb major percentatge de blancs tenen una mediana d'ingressos més alta.
+Així doncs, les ciutats amb major percentatge de blancs tenen una major variància en la mediana d'ingressos. D'altra banda, aquesta mediana es redueix i tendeix a valors més baixos quan el percentatge de negres o hispans puja.
 
 Pel que fa a la comparació en els ingressos en ciutats amb un percentatge molt elevat de cada ètnia podem veure certes diferències. Les ciutats amb alt percentatge de persones blanques són les que més alts ingressos presenten, encara que també hi ha ciutats amb alt percentatge de persones negres o asiàtiques amb mitjans-alts ingressos. En canvi, en ciutats amb alt percentatge de persones hispanes o natives americanes no hi tenen uns grans ingressos.
 
@@ -451,7 +451,7 @@ head(df_clean_cities)
 
 En l'anàlisi preliminar de les dades hem vist certa deferència amb els ingressos de les ciutats, el percentatge d'estudis superats i el percentatge de pobresa amb les persones blanques negres i hispanes. Ens centrarem en aquestes dades per a fer les anàlisis de regressió.
 
-En primer lloc, mirem com es relacionen aquestes variables.
+En primer lloc, mirem com es relacionen aquestes variables a través de la correlació. 
 
 Els valors d'aquesta taula estaran entre -1 i 1.
 
@@ -476,9 +476,18 @@ model_1 <- lm(formula = Median.Income ~ share_white + share_black + share_hispan
 summary(model_1)
 ```
 
-Amb els p-valor podem comprovar que totes les variables són significatives al 1% per a la construcció del model. Així doncs, a la interceptció del model és al voltant dels 53.000€. A mesura que augmenta el percentatge de blancs, negres i pobres, la mediana dels ingressos baixa, mentre que augmenten a més percentatge de gent amb el graduat escolar.
+Amb els p-valor podem comprovar que totes les variables són significatives al 1% per a la construcció del model. Així doncs, la interceptció del model és al voltant dels 53.000€. A mesura que augmenta el percentatge de blancs, negres i pobres, la mediana dels ingressos baixa, mentre que augmenten a més percentatge de gent amb el graduat escolar.
 
 Amb els resultats, és curiós veure com el percentatge de blancs té un efecte negatiu a l'ingrés medià. Ens fa concloure que, més que la raça, el principal factor de l'ingrés és l'educació. Però com hem vist anteriorment, les ciutats amb més percentatge de gent amb graduat escolar tenen més percentatge de blancs. La correlació entre percentatge d'estudis i percentatge de blancs és `r round(cor(df_clean_cities$percent_completed_hs, df_clean_cities$share_white),2)`.
+
+```{r}
+ggplot(df_clean_cities, aes(x = percent_completed_hs, y = Median.Income, color = share_white)) + geom_point() + geom_smooth(method = 'lm') + theme_classic() + xlab("Percentatge que tenen el graduat escolar") + ylab("Ingrés medià")
+
+ggplot(df_clean_cities, aes(x = share_white, y = percent_completed_hs)) + geom_point() + geom_smooth(method = 'lm') + theme_classic() + xlab("Percentatge de blancs") + ylab("Percentatge que tenen el graduat escolar")
+
+ggplot(df_clean_cities, aes(x = share_black, y = percent_completed_hs)) + geom_point() + geom_smooth(method = 'lm') + theme_classic() + xlab("Percentatge de negres") + ylab("Percentatge que tenen el graduat escolar")
+```
+Aquests gràfics corroboren les nostres hipòtesis: els blancs tenen més educació, i per això són més rics. El factor diferencial és la capacitat de cada raça de tenir educació.
 
 Per comprovar la qualitat del model ens fixem en el valor obtingut de R-squared, que ens diu quin percentatge de la variabilitat de les dades el model és capaç d'explicar. Com més proper a 1 siga, millor s'ajustarà el model a les dades. Hem obtingut un `r round(summary(model_1)$r.squared,2)`. S'ajusta a les dades, però no amb una gran exactitud.
 
@@ -488,9 +497,20 @@ model_2 <- lm(formula = poverty_rate ~ share_white + share_black + share_hispani
 summary(model_2)
 ```
 
-En aquest model podem observar que la variable share_black no és significativa per explicar el percentatge de pobresa, podríem llevar-la del model sense que tinga una gran influencia.
+En aquest model podem observar que la variable share_black no és significativa per explicar el percentatge de pobresa, podríem llevar-la del model sense que tinga una gran influència.
 
-Pel que fa a l'ajust del model a les dades, hem obtingut un $R^2$ molt similar a l'anterior. $R^2$ = `r round(summary(model_2)$r.squared,2)`
+Pel que fa a l'ajust del model a les dades, hem obtingut un $R^2$ molt similar a l'anterior. $R^2$ = `r round(summary(model_2)$r.squared,2)`.
+
+Les conclusions són quelcom més difífil en aquest cas. Sabem que els percentatges de cada raça és un joc de suma 0: quan puja un els altres han de baixar ja que màxim poden sumar 100%. Per això tots són negatius, perquè la intercepció és a 61%. Tot i això, veiem que el percentatge de blancs és el que és més negatiu: un augment d'aquest valor d'un punt causa una baixada de 0'09 punts al percentatge de taxa de pobresa.
+
+El següents gràfics ens mostren les nostres hipòtesis: a major percentatge de blancs, menor taxa de pobresa, i a major taxa de negres, major pobresa. Però en el moment d'haver d'explicar una variable dependent de tres percentatges de suma 100, acaben sortint les tres variables negatives.
+
+```{r}
+ggplot(df_clean_cities, aes(x = share_white, y = poverty_rate)) + geom_point() + geom_smooth(method = 'lm') + theme_classic() + xlab("Percentatge de blancs") + ylab("Taxa de pobresa")
+
+ggplot(df_clean_cities, aes(x = share_black, y = poverty_rate)) + geom_point() + geom_smooth(method = 'lm') + theme_classic() + xlab("Percentatge de negres") + ylab("Taxa de pobresa")
+```
+
 
 __Model 3:__ Predicció del percentatge de persones que han superat els estudis superiors a partir de les variables share_white, share_black, share_hispanic, poverty_rate i Median.Income.
 ```{r, eval=TRUE, echo=TRUE}
@@ -498,7 +518,9 @@ model_3 <- lm(formula = percent_completed_hs ~ share_white + share_black  + shar
 summary(model_3)
 ```
 
-En aquest tenim dos variables que podríem llevar del model, ja que no són significants per a la seua construcció. Són les variables de share_white i share_black. El seu p-valor és superior a 0.05, per la qual cosa no tenen una gran influencia en explicar el percentatge d'estudis superats.
+En aquest tenim dos variables que podríem llevar del model, ja que no són significants per a la seua construcció. Són les variables de share_white i share_black. El seu p-valor és superior a 0.05, per la qual cosa no són variables significatives.
+
+Aquests resultats ens mostren com els negres i hispans tenen menys accés a l'educació, que és la base de les diferències d'ingressos. Corroboren el que hem exposat anteriorment.
 
 Quant al valor de $R^2$ és molt similar als altres dos models. $R^2$ = `r round(summary(model_2)$r.squared,2)`
 
@@ -514,17 +536,17 @@ library(cluster)
 library(fpc)
 library(factoextra)
 
-fviz_nbclust(df_clean_cities[3:10], kmeans, method = "silhouette") +
+fviz_nbclust(df_clean_cities[3:10], kmeans, method = "wss") +
    xlab("Número de clústers") + 
    ylab("Silueta")
 ```
 
-El mètode de la silueta mesura com de bé cada observació s'ajusta al grup assignat comparant-ho amb la matriu de distàncies. Per tant, aquest és el cas pel valor k = 2.
+El mètode wss agrupa les observacions amb grups on la variància dintre del grup sigui mínima. Sembla ser que el número de clúster òptim sigui k = 4.
 
 Calcules els cluters amb la funció kmeans i vegem les variables comparades a la recerca de patrons que puguen seguir les dades:
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 set.seed(12345)
-clustering_cities <- kmeans(df_clean_cities[3:10], 2)
+clustering_cities <- kmeans(df_clean_cities[3:10], 4)
 with(df_clean_cities[3:10], pairs(df_clean_cities[3:10], col=clustering_cities$cluster)) 
 ```
 
@@ -533,9 +555,13 @@ Podem analitzar els centres de cada grup:
 clustering_cities$centers
 ```
 
-Pel grup 1, el centre és una ciutat on el 91% dels habitants tenen el graduat escolar, la taxa de pobresa és del 9%, amb una mediana d'ingrés de 76.000$, els blancs representen el 72% de la població, mentre que els negres només el 8'8%, els hispans el 16%, els asiàtics el 8% i els natius americans el 1'2%.
+ - Grup 1: el centre és una ciutat on el 85% dels habitants tenen el graduat escolar, la taxa de pobresa és del 17%, amb una mediana d'ingrés de 48.024$, els blancs representen el 73% de la població, mentre que els negres només l'11%, els hispans el 20%, els asiàtics el 3% i els natius americans l'1'5%.
 
-Pel que fa al grup 2, el centre és una ciutat on el 82'5% dels habitatnts tenen el graduat escolar, la taxa de pobresa és més alta, del 21'5%, amb una mediana d'ingrés de 41.500$, un percentatge de blancs del 70'6%, mentre que els negres representen el 15%, els hispans el 17'2%, els asiàtics el 2'5% i els natius americans el 1'9%.
+ - Grup 2: el centre és una ciutat on el 80% dels habitatnts tenen el graduat escolar, la taxa de pobresa és més alta, del 27%, amb una mediana d'ingrés de 33.108$, un percentatge de blancs del 68%, mentre que els negres representen el 20%, els hispans el 13%, els asiàtics l'1'4% i els natius americans el 2'3%.
+ 
+ - Grup 3: el centre és una ciutat on el 90% dels habitatnts tenen el graduat escolar, la taxa de pobresa és més baixa, del 10%%, amb una mediana d'ingrés de 67.455$, un percentatge de blancs del 73%, mentre que els negres representen el 9%, els hispans el 17%, els asiàtics el 6%% i els natius americans l'1'15%%.
+ 
+ - Grup 4: el centre és una ciutat on el 96% dels habitatnts tenen el graduat escolar, la taxa de pobresa és més baixa encara, del 6'40%, amb una mediana d'ingrés de 96.161$, un percentatge de blancs del 69%, mentre que els negres representen el 7'5%, els hispans el 12%, els asiàtics el 13'12% i els natius americans l'1'2%.
 
 Pel que podem veure en aquest gràfic múltiple i els resultats dels centres, la millor característica per la qual podem veure una divisió de les dades és Median.Income.
 
@@ -603,11 +629,11 @@ Recordem les preguntes que ens havíem fet a l'inici:
 
 - __Les ciutats es poden agrupar per alguna característica?__
 
-- Si. Hem realitzat clustering amb el mètode kmeans() sobre les dades de les ciutats i hem obtingut 2 grups. La característica que més ens ha permés diferenciar aquests grups ha sigut l'ingrés mitja de les ciutats.
+- Si. Hem realitzat clustering amb el mètode kmeans() sobre les dades de les ciutats i hem obtingut 4 grups. La característica que més ens ha permés diferenciar aquests grups ha sigut l'ingrés mitja de les ciutats.
 
-- __Podem estimar els ingressos mitjans d'una ciutat?__
+- __Podem estimar els ingressos mitjans d'una ciutat, la taxa de pobresa i el percentatge de gent amb graduat escolar a partir d'altres variables?__
 
-- La resposta és sí. Hem creat tres models de regressió múltiple que ens permeten, encara que no siga d'una manera perfecta, estimar les variables de l'ingrés mitjà, percentatge de pobresa i percentatge de gent que ha superat els estudis superiors. Per a estimar els ingressos mitjans hem fet servir com a variables explicatives: share_white, share_black, share_hispanic, percent_completed_hs i poverty_rate.
+- La resposta és sí. Hem creat tres models de regressió múltiple que ens permeten, encara que no siga d'una manera perfecta, estimar les variables de l'ingrés mitjà, percentatge de pobresa i percentatge de gent que ha superat els estudis superiors. Per a estimar els ingressos mitjans hem fet servir com a variables explicatives: share_white, share_black, share_hispanic, Median.Income, percent_completed_hs i poverty_rate.
 
 - __Les víctimes mortals pertanyen majoritàriament a alguna ètnia?__
 
