@@ -24,12 +24,6 @@ Algunes de les preguntes que volem respondre a partir de les dades són les seg�
 
 Així, els datasets d'interés són els següents:
 ```{r, eval=TRUE, echo=TRUE}
-#df_householdIncome <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/MedianHouseholdIncome2015.csv")
-#df_poverty <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentagePeopleBelowPovertyLevel.csv")
-#df_highSchool <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PercentOver25CompletedHighSchool.csv")
-#df_policeKilling <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/PoliceKillingsUS.csv")
-#df_shareRace <- read.csv("/Users/rogerpardellcarrera/Desktop/UOC/Tipologia i cicle de vida de les dades/Pràctica 2/Dataset/ShareRaceByCity.csv")
-
 df_householdIncome <- read.csv("data/MedianHouseholdIncome2015.csv")
 df_poverty <- read.csv("data/PercentagePeopleBelowPovertyLevel.csv")
 df_highSchool <- read.csv("data/PercentOver25CompletedHighSchool.csv")
@@ -487,6 +481,7 @@ ggplot(df_clean_cities, aes(x = share_white, y = percent_completed_hs)) + geom_p
 
 ggplot(df_clean_cities, aes(x = share_black, y = percent_completed_hs)) + geom_point() + geom_smooth(method = 'lm') + theme_classic() + xlab("Percentatge de negres") + ylab("Percentatge que tenen el graduat escolar")
 ```
+
 Aquests gràfics corroboren les nostres hipòtesis: els blancs tenen més educació, i per això són més rics. El factor diferencial és la capacitat de cada raça de tenir educació.
 
 Per comprovar la qualitat del model ens fixem en el valor obtingut de R-squared, que ens diu quin percentatge de la variabilitat de les dades el model és capaç d'explicar. Com més proper a 1 siga, millor s'ajustarà el model a les dades. Hem obtingut un `r round(summary(model_1)$r.squared,2)`. S'ajusta a les dades, però no amb una gran exactitud.
@@ -510,7 +505,6 @@ ggplot(df_clean_cities, aes(x = share_white, y = poverty_rate)) + geom_point() +
 
 ggplot(df_clean_cities, aes(x = share_black, y = poverty_rate)) + geom_point() + geom_smooth(method = 'lm') + theme_classic() + xlab("Percentatge de negres") + ylab("Taxa de pobresa")
 ```
-
 
 __Model 3:__ Predicció del percentatge de persones que han superat els estudis superiors a partir de les variables share_white, share_black, share_hispanic, poverty_rate i Median.Income.
 ```{r, eval=TRUE, echo=TRUE}
@@ -572,7 +566,7 @@ cluster_1 <- cbind(df_clean_cities[c(4,5)], resultats)
 ggplot(cluster_1) + geom_point(mapping = aes(x = Median.Income, y = poverty_rate, colour = factor(resultats)), size = 0.6) + xlab("Mediana de l'ingrés") + ylab("Taxa de pobresa") + theme_classic() + theme(legend.position = "none")
 ```
 
-Comprovem com es divideixen els dos clusters que s'han creat amb les variables de la mediana de l'ingrés i la taxa de pobresa.
+Comprovem com es divideixen els quatre clusters que s'han creat amb les variables de la mediana de l'ingrés i la taxa de pobresa.
 
 ## Contrast d'hipòtesis
 
